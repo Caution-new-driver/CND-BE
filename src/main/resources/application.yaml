@@ -1,3 +1,5 @@
 spring:
   application:
-    name: next-R.U.N.
+    name: cndbe
+  profiles:
+    active: local
