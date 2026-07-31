@@ -113,7 +113,7 @@
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
-| b13 | PATCH | `/api/drops/{dropId}/confirm` | 상태 전환(CONFIRMED) + 부가정보 저장(이름 직접입력, 기간, 예상 제작기간, 넘버링은 Stage4 값 기반 확정) | 제안 |
+| b13 | PATCH | `/api/drops/{dropId}/confirm` | 상태 전환(CONFIRMED) + 부가정보 저장(이름 직접입력, 예상 제작기간, 넘버링은 Stage4 값 기반 확정) | 제안 |
 | b14 | POST | `/api/drops/{dropId}/intro-text` | AI 소개문 초안 생성 | 제안 |
 | b14 | PATCH | `/api/drops/{dropId}/intro-text` | 담당자 수정본 저장 | 제안 |
 
