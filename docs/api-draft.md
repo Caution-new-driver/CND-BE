@@ -34,7 +34,7 @@
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
 | b7 | POST | `/api/drops` | Drop 생성 (draft 상태), 고정 미니백 템플릿 정보 함께 반환 | ✅ 구현됨 |
-| b8 | POST | `/api/drops/{dropId}/design-requirement` | 디자인 조건 저장 (스케치 이미지 첨부 선택) | ✅ 구현됨 |
+| b8 | POST | `/api/drops/{dropId}/design-requirement` | 디자인 조건 저장 | ✅ 구현됨 |
 
 ### `POST /api/drops`
 요청 바디 없음.
@@ -62,7 +62,6 @@
 | minGrade | string | 아니오 |
 | accessoryColor | string | 아니오 |
 | usePointMaterial | boolean | 아니오 |
-| sketchImage | file | 아니오 |
 
 응답 (200):
 ```json
@@ -74,13 +73,14 @@
   "pattern": "무지",
   "minGrade": "A",
   "accessoryColor": "골드",
-  "usePointMaterial": true,
-  "sketchImageUrl": "https://res.cloudinary.com/..."
+  "usePointMaterial": true
 }
 ```
 같은 `dropId`로 재호출하면 새로 안 생기고 기존 것을 덮어씀(upsert).
 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
+
+**변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 
 ---
 

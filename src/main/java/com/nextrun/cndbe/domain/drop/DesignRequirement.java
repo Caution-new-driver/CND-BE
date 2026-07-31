@@ -41,7 +41,4 @@ public class DesignRequirement extends BaseEntity {
 	private String minGrade;
 	private String accessoryColor;
 	private Boolean usePointMaterial;
-
-	// 참고용 첨부. 수량 계산에는 영향 없음.
-	private String sketchImageUrl;
 }

@@ -1,12 +1,10 @@
 package com.nextrun.cndbe.domain.drop;
 
-import com.nextrun.cndbe.common.client.CloudinaryImageUploader;
 import com.nextrun.cndbe.domain.material.Template;
 import com.nextrun.cndbe.domain.material.TemplateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +16,6 @@ public class DropService {
 	private final DropRepository dropRepository;
 	private final DesignRequirementRepository designRequirementRepository;
 	private final TemplateRepository templateRepository;
-	private final CloudinaryImageUploader imageUploader;
 
 	@Transactional
 	public Drop createDraftDrop() {
@@ -41,15 +38,10 @@ public class DropService {
 			String pattern,
 			String minGrade,
 			String accessoryColor,
-			Boolean usePointMaterial,
-			MultipartFile sketchImage) {
+			Boolean usePointMaterial) {
 
 		Drop drop = dropRepository.findById(dropId)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 Drop입니다: " + dropId));
-
-		String sketchImageUrl = (sketchImage != null && !sketchImage.isEmpty())
-				? imageUploader.upload(sketchImage)
-				: null;
 
 		// f4 분기 B "조건 수정해 다시 검색" 시 재입력 범위가 아직 미확정이라,
 		// 재호출 시 기존 것을 덮어쓰는 upsert로 처리 (중복 row 방지)
@@ -62,9 +54,6 @@ public class DropService {
 		requirement.setMinGrade(minGrade);
 		requirement.setAccessoryColor(accessoryColor);
 		requirement.setUsePointMaterial(usePointMaterial);
-		if (sketchImageUrl != null) {
-			requirement.setSketchImageUrl(sketchImageUrl);
-		}
 
 		return designRequirementRepository.save(requirement);
 	}

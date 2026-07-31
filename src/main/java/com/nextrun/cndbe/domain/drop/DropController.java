@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Drop")
 @RestController
@@ -37,10 +36,9 @@ public class DropController {
 			@RequestParam(required = false) String pattern,
 			@RequestParam(required = false) String minGrade,
 			@RequestParam(required = false) String accessoryColor,
-			@RequestParam(required = false) Boolean usePointMaterial,
-			@RequestParam(required = false) MultipartFile sketchImage) {
+			@RequestParam(required = false) Boolean usePointMaterial) {
 		DesignRequirement requirement = dropService.saveDesignRequirement(
-				dropId, materialType, color, pattern, minGrade, accessoryColor, usePointMaterial, sketchImage);
+				dropId, materialType, color, pattern, minGrade, accessoryColor, usePointMaterial);
 		return DesignRequirementResponse.from(requirement);
 	}
 }

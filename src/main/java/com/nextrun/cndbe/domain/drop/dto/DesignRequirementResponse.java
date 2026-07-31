@@ -17,7 +17,6 @@ public class DesignRequirementResponse {
 	private String minGrade;
 	private String accessoryColor;
 	private Boolean usePointMaterial;
-	private String sketchImageUrl;
 
 	public static DesignRequirementResponse from(DesignRequirement requirement) {
 		return DesignRequirementResponse.builder()
@@ -29,7 +28,6 @@ public class DesignRequirementResponse {
 				.minGrade(requirement.getMinGrade())
 				.accessoryColor(requirement.getAccessoryColor())
 				.usePointMaterial(requirement.getUsePointMaterial())
-				.sketchImageUrl(requirement.getSketchImageUrl())
 				.build();
 	}
 }
