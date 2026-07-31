@@ -47,6 +47,28 @@ next:R.U.N은 멋쟁이사자처럼 해커톤(SJF Track — Fashion & Luxury wit
 
 Stage 0(~8/1: 셋업·DB·API명세) → Stage1·2 병렬(~8/4) → Stage3 합류(~8/6) → Stage4 계산(~8/8) → Stage5 확정(~8/11, **기능개발 종료**) → 통합/QA/데모(~8/18, 7일)
 
+## 구현 현황 (v5 기준 23개 중)
+
+- ✅ **완료·`dev` 병합·배포됨**: `b0,b1,b2`(초기세팅/DB스키마/외부클라이언트), `b7,b8`(Drop 생성·디자인조건저장 API), `f0,f2,f3`(FE)
+- 🔲 **미착수**: `b4~b6,f1`(이수현), `b9~b12,f4,f5`(박서준/가연우), `b13,b14,f6,f7`(김재현·가연우 잔여분 — `b13`이 `b12` 결과에 의존해서 완전한 구현은 `b12` 끝나야 가능. 뼈대만 먼저 만드는 건 가능)
+- `b3`(API 명세 합의)는 팀 회의로 못 박지 않고, `docs/api-draft.md` 초안 그대로 각자 개발 착수 → 진행하면서 수정하기로 **합의된 방침**. 열린 질문(`Material.status` 값 목록, 소재 후보 0건 응답 형식)은 각 담당자가 구현하면서 확정.
+- **역할 분담 개수가 불균형함**: 김재현 10 / 가연우 5 / 박서준 4 / 이수현 3 (v5에서 이수현 담당이던 Stage 6 전체가 사라진 부작용). 팀이 인지한 상태로 일단 이대로 진행하기로 결정함 — 나중에 이수현 쪽 여유 생기면 `b3` 주도나 박서준 페어 제안 고려.
+
+## 배포 정보
+
+- 백엔드(Railway): `https://cnd-be-production.up.railway.app` — `dev` 브랜치 push 시 자동 재배포 (Custom Start Command 직접 지정돼있음, 아래 참고)
+- 프론트(Vercel): `https://cnd-fe-git-dev-jae-hyun-kim.vercel.app` — Production Branch = `dev`
+- Railway 환경변수: `SPRING_PROFILES_ACTIVE=prod`, `DATASOURCE_URL/USERNAME/PASSWORD`(Neon), `OPENAI_API_KEY`, `CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET`, `CORS_ALLOWED_ORIGINS`(콤마 구분 목록, 현재 로컬+Vercel preview 주소 등록됨 — 나중에 Vercel 정식 도메인 나오면 추가 필요)
+- 로컬 시크릿은 `src/main/resources/application-local.yaml`(gitignored) — 팀 전달 완료, 새 팀원은 기존 팀원에게 비공개 채널로 요청
+- **미해결**: Vercel Deployment Protection이 켜져있어서 프로젝트에 초대 안 된 사람은 배포된 프론트에 접속 불가 — 팀원 전부 Vercel 프로젝트 멤버로 초대됐는지 확인 필요
+
+## 알아두면 시간 아끼는 것들
+
+- **Jackson 3.x**: `com.fasterxml.jackson.databind.ObjectMapper`가 아니라 `tools.jackson.databind.json.JsonMapper` 사용 (패키지 자체가 바뀜; annotation만 예외로 `com.fasterxml.jackson.annotation` 그대로 유지)
+- **Railway 시작 커맨드**: 기본 자동감지 패턴(`*/build/libs/*jar`)이 하위 폴더 있는 멀티모듈 프로젝트를 가정해서 이 프로젝트(루트에 바로 jar 생성)엔 안 맞음. `build.gradle`에서 plain jar 비활성화(`tasks.named('jar') { enabled = false }`) + Railway Settings→Deploy에 Custom Start Command `sh -c "java -jar build/libs/*.jar"` 직접 지정해둔 상태.
+- **Railway GitHub App**: 조직(`Caution-new-driver`) 레포에 앱 설치 자체가 안 돼있으면 "GitHub Repo not found"로 뜸 — GitHub 조직 설정 → Installed GitHub Apps에서 직접 설치해야 해결됨.
+- **CORS**: 콤마로 여러 origin 등록할 때 공백 들어가면 매칭 실패함 — `CorsConfig.java`에서 이미 trim 처리해뒀지만, Railway Variables에 값 입력할 때도 공백/trailing slash 없이 정확히 입력할 것.
+
 ## 주의
 
 - v4 문서의 ID(`b0~b18`, `f0~f10`)는 v3와 다르게 재채번됨 — 예전 자료(v3)의 ID와 혼용하지 말 것.

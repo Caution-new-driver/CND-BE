@@ -25,7 +25,7 @@
 | b4 | PATCH | `/api/materials/{id}` | 소재 수정 (등급·태그 수정 포함) | 제안 |
 | b6 | - | - | AI 태깅은 `POST /api/materials` 응답에 함께 포함하는 걸 제안 (등록과 동시에 AI 분석 결과까지 반환 → f1 화면이 한 화면에서 등록+태깅확인 하므로) | 제안 |
 
-**열린 질문**: `Material.status` 값 목록이 아직 안 정해짐 (지금 코드엔 `AVAILABLE`/`RESERVED`/`DEPLETED`로 임시 가정해둠 — 이수현님 확인 필요)
+**해결됨 (2026-07-31, 김재현)**: `Material.status`는 `AVAILABLE`(등록됨) → `RESERVED`(b11에서 어떤 Drop의 주/포인트 소재로 선택됨) → `DEPLETED`(b13에서 그 Drop이 확정됨)의 3단계로 확정. `RESERVED` 상태에서 소재 선택이 재검색되거나 취소되면 `AVAILABLE`로 자동 복귀시켜야 함. `quantity`(재고 수량)는 지금은 분할 관리 없이 한 소재를 통째로 한 Drop에만 배정하는 것으로 단순화(부분 사용 지원은 나중에 스키마 변경 없이 추가 가능) — 이수현님은 이 흐름대로 b4 구현하시면 됩니다.
 
 ---
 
