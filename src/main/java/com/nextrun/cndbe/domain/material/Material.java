@@ -30,19 +30,27 @@ public class Material extends BaseEntity {
 	private UUID id;
 
 	private String materialCode;
-	private String materialType;
+
+	@Enumerated(EnumType.STRING)
+	private MaterialType materialType;
 
 	// AI가 사진 분석으로 채우는 값
-	private String color;
-	private String pattern;
+	@Enumerated(EnumType.STRING)
+	private MaterialColor color;
+
+	@Enumerated(EnumType.STRING)
+	private MaterialPattern pattern;
+
 	private String texture;
 	private Float aiConfidence;
 	private String surfaceNotes;
 
 	// 사람이 직접 입력하는 값
-	private String grade;
-	private Float widthCm;
-	private Float heightCm;
+	@Enumerated(EnumType.STRING)
+	private MaterialGrade grade;
+
+	private Float widthMm;
+	private Float heightMm;
 	private Float thicknessMm;
 	private String handFeel;
 	private String flexibility;
