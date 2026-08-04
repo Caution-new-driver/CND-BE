@@ -26,7 +26,6 @@ public class MaterialService {
     @Transactional
     public Material create(MaterialCreateRequest request) {
 
-        // 전체샷/클로즈업 사진을 각각 Cloudinary에 업로드하고 URL 받기.
         // 사진이 안 왔을 수도 있으니(선택사항) null/empty 체크부터.
         String imageUrlFull = (request.getImageFull() != null && !request.getImageFull().isEmpty())
                 ? imageUploader.upload(request.getImageFull())
@@ -36,7 +35,6 @@ public class MaterialService {
                 ? imageUploader.upload(request.getImageCloseup())
                 : null;
 
-        // AI 값(color/pattern/texture 등)은 아직 안 넣음 -> b6에서 나중에 채워짐.
         Material material = Material.builder()
                 .materialCode(request.getMaterialCode())
                 .materialType(request.getMaterialType())
@@ -105,6 +103,11 @@ public class MaterialService {
     @Transactional
     public Material tagWithAi(UUID id) {
         Material material = findMaterialOrThrow(id);
+
+        // 이미 태깅된 소재면 OpenAI를 또 호출하지 않고 바로 반환 (중복 호출 방지 = 비용 절약)
+        if (material.getColor() != null) {
+            return material;
+        }
 
         MaterialAiTagResult result = aiTaggingClient.tag(
                 material.getImageUrlFull(), material.getImageUrlCloseup());
