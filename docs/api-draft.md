@@ -46,7 +46,7 @@
   "status": "DRAFT",
   "templateId": "uuid",
   "templateName": "미니백",
-  "patternPieces": [{ "pieceName": "앞판", "widthCm": 20, "heightCm": 15, "quantity": 1 }],
+  "patternPieces": [{ "pieceName": "앞판", "widthMm": 200, "heightMm": 150, "quantity": 1 }],
   "requiredAccessories": [{ "accessoryType": "지퍼", "quantity": 1 }]
 }
 ```
