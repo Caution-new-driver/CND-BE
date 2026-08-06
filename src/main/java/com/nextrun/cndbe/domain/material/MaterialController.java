@@ -9,15 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -78,5 +70,11 @@ public class MaterialController {
     public MaterialResponse update(@Parameter(description = "소재 id (UUID)") @PathVariable UUID id,
                                    @ModelAttribute MaterialUpdateRequest request) {
         return MaterialResponse.from(materialService.update(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)  // 성공하면 204 (삭제 성공, 돌려줄 내용 없음)
+    public void delete(@PathVariable UUID id) {
+        materialService.delete(id);
     }
 }
