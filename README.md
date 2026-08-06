@@ -43,4 +43,4 @@
 2. 담당자에게 받은 `application-local.yaml`을 `src/main/resources/`에 그대로 저장
 3. 로컬 실행: `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bootRun`
 4. `http://localhost:8080/actuator/health`가 `{"status":"UP"}` 뜨면 정상
-5. `dev`에서 `feat/...` 브랜치 따서 작업 → 로컬 확인 → 커밋 → `dev` 병합 → push
+5. `dev`에서 `feat/...` 브랜치 따서 작업 → 로컬 확인 → 커밋 → push → pr 올리기 -> `dev` 병합
