@@ -54,31 +54,35 @@
 ### `POST /api/drops/{dropId}/design-requirement`
 `multipart/form-data`:
 
-| 필드 | 타입 | 필수 |
-| --- | --- | --- |
-| materialType | string | 아니오 |
-| color | string | 아니오 |
-| pattern | string | 아니오 |
-| minGrade | string | 아니오 |
-| accessoryColor | string | 아니오 |
-| usePointMaterial | boolean | 아니오 |
+| 필드 | 타입 | 필수 | 허용 값 |
+| --- | --- | --- | --- |
+| materialType | enum(string) | 아니오 | `LEATHER`, `COATED_CANVAS`, `FABRIC`, `SYNTHETIC`, `OTHER` |
+| color | enum(string) | 아니오 | `BLACK`, `BROWN`, `BEIGE`, `WHITE`, `RED`, `BLUE`, `MULTI`, `OTHER` |
+| pattern | enum(string) | 아니오 | `MONOGRAM`, `SOLID`, `GEOMETRIC`, `STRIPE`, `OTHER` |
+| minGrade | enum(string) | 아니오 | `A`, `B`, `C` |
+| accessoryColor | enum(string) | 아니오 | `GOLD`, `SILVER`, `BLACK` |
+| usePointMaterial | boolean | 아니오 | - |
+
+`materialType`/`color`/`pattern`/`minGrade`는 `Material` 엔티티의 enum(`MaterialType`/`MaterialColor`/`MaterialPattern`/`MaterialGrade`)과 동일한 값을 그대로 씀 — b9에서 문자열 비교 없이 바로 매칭하기 위함. FE(f3)는 자유 입력 대신 Select로 받아 한글 라벨(예: "가죽")을 이 영문 enum 값(`LEATHER`)으로 변환해 전송해야 함. 잘못된 값이 오면 400으로 거부됨.
 
 응답 (200):
 ```json
 {
   "id": "uuid",
   "dropId": "uuid",
-  "materialType": "가죽",
-  "color": "블랙",
-  "pattern": "무지",
+  "materialType": "LEATHER",
+  "color": "BLACK",
+  "pattern": "SOLID",
   "minGrade": "A",
-  "accessoryColor": "골드",
+  "accessoryColor": "GOLD",
   "usePointMaterial": true
 }
 ```
 같은 `dropId`로 재호출하면 새로 안 생기고 기존 것을 덮어씀(upsert).
 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
+
+**변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`는 기존에 대응 enum이 없어서 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 새로 만듦 — `Accessory.color`(b4~b6, 이수현 담당)는 아직 이 enum을 안 쓰고 있으니 필요하면 같이 맞출지 논의 필요.
 
 **변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 

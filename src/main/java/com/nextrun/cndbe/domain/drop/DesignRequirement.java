@@ -1,7 +1,14 @@
 package com.nextrun.cndbe.domain.drop;
 
 import com.nextrun.cndbe.common.BaseEntity;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
+import com.nextrun.cndbe.domain.material.MaterialColor;
+import com.nextrun.cndbe.domain.material.MaterialGrade;
+import com.nextrun.cndbe.domain.material.MaterialPattern;
+import com.nextrun.cndbe.domain.material.MaterialType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -35,10 +42,20 @@ public class DesignRequirement extends BaseEntity {
 	@JoinColumn(name = "drop_id")
 	private Drop drop;
 
-	private String materialType;
-	private String color;
-	private String pattern;
-	private String minGrade;
-	private String accessoryColor;
+	@Enumerated(EnumType.STRING)
+	private MaterialType materialType;
+
+	@Enumerated(EnumType.STRING)
+	private MaterialColor color;
+
+	@Enumerated(EnumType.STRING)
+	private MaterialPattern pattern;
+
+	@Enumerated(EnumType.STRING)
+	private MaterialGrade minGrade;
+
+	@Enumerated(EnumType.STRING)
+	private AccessoryColor accessoryColor;
+
 	private Boolean usePointMaterial;
 }

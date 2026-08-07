@@ -1,6 +1,11 @@
 package com.nextrun.cndbe.domain.drop.dto;
 
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
+import com.nextrun.cndbe.domain.material.MaterialColor;
+import com.nextrun.cndbe.domain.material.MaterialGrade;
+import com.nextrun.cndbe.domain.material.MaterialPattern;
+import com.nextrun.cndbe.domain.material.MaterialType;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,11 +16,11 @@ public class DesignRequirementResponse {
 
 	private UUID id;
 	private UUID dropId;
-	private String materialType;
-	private String color;
-	private String pattern;
-	private String minGrade;
-	private String accessoryColor;
+	private MaterialType materialType;
+	private MaterialColor color;
+	private MaterialPattern pattern;
+	private MaterialGrade minGrade;
+	private AccessoryColor accessoryColor;
 	private Boolean usePointMaterial;
 
 	public static DesignRequirementResponse from(DesignRequirement requirement) {

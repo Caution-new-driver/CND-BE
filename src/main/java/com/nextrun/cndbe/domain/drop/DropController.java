@@ -2,6 +2,11 @@ package com.nextrun.cndbe.domain.drop;
 
 import com.nextrun.cndbe.domain.drop.dto.DesignRequirementResponse;
 import com.nextrun.cndbe.domain.drop.dto.DropResponse;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
+import com.nextrun.cndbe.domain.material.MaterialColor;
+import com.nextrun.cndbe.domain.material.MaterialGrade;
+import com.nextrun.cndbe.domain.material.MaterialPattern;
+import com.nextrun.cndbe.domain.material.MaterialType;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +36,11 @@ public class DropController {
 	@PostMapping(value = "/api/drops/{dropId}/design-requirement")
 	public DesignRequirementResponse saveDesignRequirement(
 			@PathVariable UUID dropId,
-			@RequestParam(required = false) String materialType,
-			@RequestParam(required = false) String color,
-			@RequestParam(required = false) String pattern,
-			@RequestParam(required = false) String minGrade,
-			@RequestParam(required = false) String accessoryColor,
+			@RequestParam(required = false) MaterialType materialType,
+			@RequestParam(required = false) MaterialColor color,
+			@RequestParam(required = false) MaterialPattern pattern,
+			@RequestParam(required = false) MaterialGrade minGrade,
+			@RequestParam(required = false) AccessoryColor accessoryColor,
 			@RequestParam(required = false) Boolean usePointMaterial) {
 		DesignRequirement requirement = dropService.saveDesignRequirement(
 				dropId, materialType, color, pattern, minGrade, accessoryColor, usePointMaterial);
