@@ -31,12 +31,17 @@ public class MaterialCandidateService {
     private final MaterialCandidateFilter materialCandidateFilter;
     private final MaterialMatchScorer materialMatchScorer;
     private final MaterialRecommendationClient materialRecommendationClient;
+    private final MaterialSelectionService materialSelectionService;
 
     @Transactional
     public MaterialCandidateListResponse calculateCandidates(UUID dropId) {
         // 1. 추천의 기준이 되는 Drop과 디자인 조건이 실제로 저장돼 있는지 확인.
         Drop drop = findDrop(dropId);
         DesignRequirement requirement = findDesignRequirement(dropId);
+
+        // 이전에 선택한 소재가 있다면 재검색 전에 예약을 풀어야
+        // 그 소재도 AVAILABLE 후보로 다시 평가될 수 있음.
+        materialSelectionService.releaseSelectionForResearch(dropId);
 
         // 2. 미니백 1개 제작에 필요한 패턴 조각의 전체 면적을 mm²로 계산.
         double requiredAreaMm2 =

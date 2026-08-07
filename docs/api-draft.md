@@ -90,10 +90,59 @@
 | --- | --- | --- | --- | --- |
 | b9+b10 | POST | `/api/drops/{dropId}/material-candidates` | 필수조건 필터링 + AI 추천(최대 3개, 추천이유·주의사항 포함) 계산·저장 | 제안 |
 | b9+b10 | GET | `/api/drops/{dropId}/material-candidates` | 계산된 후보 조회 | 제안 |
-| b11 | POST | `/api/drops/{dropId}/material-selection` | 주 소재·포인트 소재 확정 저장 | 제안 |
-| b11 | POST | `/api/drops/{dropId}/accessory-selections` | 부자재 세트 확정 저장 | 제안 |
+| b11 | GET | `/api/accessories` | 선택 가능한 부자재 목록 조회 | ✅ 구현됨 |
+| b11 | POST | `/api/drops/{dropId}/material-selection` | 주 소재·포인트 소재 확정 저장 | ✅ 구현됨 |
+| b11 | POST | `/api/drops/{dropId}/accessory-selections` | 부자재 세트 확정 저장 | ✅ 구현됨 |
 
 **열린 질문**: 후보 0건일 때(b19에 해당하던 케이스, v4에서도 로직상 필요) 응답을 어떻게 표현할지 — 빈 배열 + 상태 코드로 구분할지, 별도 필드로 표시할지.
+
+### `GET /api/accessories`
+
+응답 (200):
+```json
+[
+  {"id": "uuid", "accessoryType": "지퍼", "color": "GOLD"},
+  {"id": "uuid", "accessoryType": "링", "color": "GOLD"}
+]
+```
+
+서버 시작 시 디자이너가 선택할 수 있는 `지퍼`/`링` × `GOLD`/`SILVER`/`BLACK`
+조합 중 DB에 없는 것만 시드 데이터로 등록한다. AI가 선택하거나 확정하지 않는다.
+
+### `POST /api/drops/{dropId}/material-selection`
+
+요청 바디:
+```json
+{
+  "mainCandidateId": "uuid",
+  "pointCandidateId": "uuid 또는 null"
+}
+```
+
+`mainCandidateId`는 필수이고 `pointCandidateId`는 선택사항이다. 둘 다 b9 응답의
+`candidateId`를 사용한다. 선택한 소재는 `RESERVED`로 변경되며 같은 Drop에서
+재선택하면 더 이상 사용하지 않는 기존 소재는 `AVAILABLE`로 복구된다.
+
+응답 (200): 선택 ID, Drop ID, 주 소재 상세 정보와 선택적 포인트 소재 상세 정보를 반환한다.
+
+### `POST /api/drops/{dropId}/accessory-selections`
+
+요청 바디:
+```json
+{
+  "accessoryIds": ["지퍼 uuid", "링 uuid"]
+}
+```
+
+`GET /api/accessories`에서 받은 ID를 사용한다. 미니백 템플릿의 필수 종류인
+지퍼와 링이 각각 하나씩 포함돼야 하며, 같은 Drop에서 재호출하면 기존 부자재
+선택을 새 세트로 교체한다. 링의 필요 수량 2개는 템플릿 정보로 관리하므로 같은
+부자재 ID를 두 번 보내지 않는다.
+
+응답 (200): Drop ID와 저장된 부자재 선택 ID·부자재 ID·종류·색상을 반환한다.
+
+소재 후보를 다시 계산하는 `POST /material-candidates`를 호출하면 기존 소재 선택은
+삭제되고 해당 Drop이 예약했던 소재는 `AVAILABLE`로 자동 복구된다.
 
 ---
 

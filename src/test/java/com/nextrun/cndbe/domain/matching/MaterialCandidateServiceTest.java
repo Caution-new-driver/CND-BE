@@ -64,6 +64,9 @@ class MaterialCandidateServiceTest {
     @Mock
     private MaterialRecommendationClient materialRecommendationClient;
 
+    @Mock
+    private MaterialSelectionService materialSelectionService;
+
     @InjectMocks
     private MaterialCandidateService service;
 

@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.matching;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,7 @@ public interface MaterialCandidateRepository
 
     // 같은 Drop을 재검색하면 과거 계산 결과를 지우고 새 결과로 교체함.
     void deleteAllByDrop_Id(UUID dropId);
+
+    // b11에서 다른 Drop의 후보 ID를 몰래 보낼 수 없도록 후보 ID와 Drop ID를 함께 확인함.
+    Optional<MaterialCandidate> findByIdAndDrop_Id(UUID candidateId, UUID dropId);
 }
