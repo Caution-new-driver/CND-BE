@@ -3,6 +3,8 @@ package com.nextrun.cndbe.domain.matching;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
+import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialColor;
@@ -10,7 +12,9 @@ import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.MaterialType;
+import com.nextrun.cndbe.domain.material.Template;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 // b9 필수조건 필터가 상태·AI 태깅·소재 종류·등급·면적을
 // 기획한 규칙대로 통과시키거나 제외하는지 각각 확인함.
@@ -19,7 +23,11 @@ class MaterialCandidateFilterTest {
     private static final double MINI_BAG_AREA_MM2 = 84_000;
 
     private final MaterialCandidateFilter filter =
-            new MaterialCandidateFilter();
+            new MaterialCandidateFilter(
+                    new TemplatePatternParser(JsonMapper.builder().build()),
+                    new PatternPlacementCalculator()
+            );
+    private final Template miniBagTemplate = miniBagTemplate();
 
     @Test
     void 필수_조건을_모두_충족하면_후보가_된다() {
@@ -32,7 +40,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement,
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertTrue(result);
@@ -46,7 +55,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement("COATED_CANVAS", "A"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertFalse(result);
@@ -60,7 +70,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement("COATED_CANVAS", "A"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertFalse(result);
@@ -71,7 +82,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 eligibleMaterial(),
                 requirement("LEATHER", "A"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertFalse(result);
@@ -85,7 +97,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement("COATED_CANVAS", "B"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertFalse(result);
@@ -99,7 +112,8 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement("COATED_CANVAS", "B"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertTrue(result);
@@ -115,7 +129,25 @@ class MaterialCandidateFilterTest {
         boolean result = filter.isEligible(
                 material,
                 requirement("COATED_CANVAS", "A"),
-                MINI_BAG_AREA_MM2
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
+        );
+
+        assertFalse(result);
+    }
+
+    @Test
+    void 총면적이_충분해도_한_장에_패턴이_안_들어가면_제외한다() {
+        Material material = eligibleMaterial();
+        material.setWidthMm(100F);
+        material.setHeightMm(100F);
+        material.setQuantity(9);
+
+        boolean result = filter.isEligible(
+                material,
+                requirement("COATED_CANVAS", "A"),
+                MINI_BAG_AREA_MM2,
+                miniBagTemplate
         );
 
         assertFalse(result);
@@ -141,6 +173,20 @@ class MaterialCandidateFilterTest {
         return DesignRequirement.builder()
                 .materialType(materialType)
                 .minGrade(minGrade)
+                .build();
+    }
+
+    private Template miniBagTemplate() {
+        return Template.builder()
+                .patternPieces(
+                        """
+                        [
+                          {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1},
+                          {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1},
+                          {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1}
+                        ]
+                        """
+                )
                 .build();
     }
 }

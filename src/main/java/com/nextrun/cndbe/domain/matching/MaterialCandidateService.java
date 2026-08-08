@@ -55,7 +55,8 @@ public class MaterialCandidateService {
                                 materialCandidateFilter.isEligible(
                                         material,
                                         requirement,
-                                        requiredAreaMm2
+                                        requiredAreaMm2,
+                                        drop.getTemplate()
                                 )
                         )
                         .map(material ->
