@@ -33,8 +33,8 @@ class MaterialCandidateFilterTest {
     void 필수_조건을_모두_충족하면_후보가_된다() {
         Material material = eligibleMaterial();
         DesignRequirement requirement = requirement(
-                "COATED_CANVAS",
-                "A"
+                MaterialType.COATED_CANVAS,
+                MaterialGrade.A
         );
 
         boolean result = filter.isEligible(
@@ -54,7 +54,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "A"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -69,7 +69,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "A"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -81,7 +81,7 @@ class MaterialCandidateFilterTest {
     void 소재_종류가_다르면_후보에서_제외한다() {
         boolean result = filter.isEligible(
                 eligibleMaterial(),
-                requirement("LEATHER", "A"),
+                requirement(MaterialType.LEATHER, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -96,7 +96,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "B"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.B),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -111,7 +111,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "B"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.B),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -128,7 +128,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "A"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -145,7 +145,7 @@ class MaterialCandidateFilterTest {
 
         boolean result = filter.isEligible(
                 material,
-                requirement("COATED_CANVAS", "A"),
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
                 miniBagTemplate
         );
@@ -167,8 +167,8 @@ class MaterialCandidateFilterTest {
     }
 
     private DesignRequirement requirement(
-            String materialType,
-            String minGrade
+            MaterialType materialType,
+            MaterialGrade minGrade
     ) {
         return DesignRequirement.builder()
                 .materialType(materialType)

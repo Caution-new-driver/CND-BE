@@ -2,6 +2,10 @@ package com.nextrun.cndbe.domain.matching;
 
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
+import com.nextrun.cndbe.domain.material.MaterialColor;
+import com.nextrun.cndbe.domain.material.MaterialGrade;
+import com.nextrun.cndbe.domain.material.MaterialPattern;
+import com.nextrun.cndbe.domain.material.MaterialType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -271,10 +275,10 @@ public class MaterialRecommendationClient {
     }
 
     private record RequirementPrompt(
-            String materialType,
-            String color,
-            String pattern,
-            String minGrade
+            MaterialType materialType,
+            MaterialColor color,
+            MaterialPattern pattern,
+            MaterialGrade minGrade
     ) {
     }
 

@@ -80,10 +80,10 @@ class MaterialCandidateServiceTest {
                 .build();
         requirement = DesignRequirement.builder()
                 .drop(drop)
-                .materialType("COATED_CANVAS")
-                .color("BEIGE")
-                .pattern("STRIPE")
-                .minGrade("A")
+                .materialType(MaterialType.COATED_CANVAS)
+                .color(MaterialColor.BEIGE)
+                .pattern(MaterialPattern.STRIPE)
+                .minGrade(MaterialGrade.A)
                 .build();
     }
 

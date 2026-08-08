@@ -4,14 +4,10 @@ import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
 import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
-import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
-import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
-import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 // b9의 필수조건 필터. 전체 재고 중에서 디자인 조건과 제작 최소조건을
 // 모두 통과한 소재만 점수 계산 대상으로 넘김.
@@ -53,29 +49,16 @@ public class MaterialCandidateFilter {
     }
 
     // 소재 종류 조건을 입력하지 않았다면 모든 종류를 허용하고,
-    // 입력했다면 프론트와 합의한 MaterialType enum 코드로 정확히 비교함.
+    // 입력했다면 MaterialType enum을 직접 비교함.
     private boolean matchesMaterialType(
             Material material,
             DesignRequirement requirement
     ) {
-        if (!StringUtils.hasText(requirement.getMaterialType())) {
+        if (requirement.getMaterialType() == null) {
             return true;
         }
 
-        try {
-            MaterialType requiredType = MaterialType.valueOf(
-                    requirement.getMaterialType()
-                            .trim()
-                            .toUpperCase(Locale.ROOT)
-            );
-
-            return material.getMaterialType() == requiredType;
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "지원하지 않는 소재 종류입니다: "
-                            + requirement.getMaterialType()
-            );
-        }
+        return material.getMaterialType() == requirement.getMaterialType();
     }
 
     // 등급 순서는 A가 가장 좋고 C가 가장 낮음.
@@ -84,25 +67,12 @@ public class MaterialCandidateFilter {
             Material material,
             DesignRequirement requirement
     ) {
-        if (!StringUtils.hasText(requirement.getMinGrade())) {
+        if (requirement.getMinGrade() == null) {
             return true;
         }
 
-        try {
-            MaterialGrade minimumGrade = MaterialGrade.valueOf(
-                    requirement.getMinGrade()
-                            .trim()
-                            .toUpperCase(Locale.ROOT)
-            );
-
-            return material.getGrade().ordinal()
-                    <= minimumGrade.ordinal();
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "지원하지 않는 소재 등급입니다: "
-                            + requirement.getMinGrade()
-            );
-        }
+        return material.getGrade().ordinal()
+                <= requirement.getMinGrade().ordinal();
     }
 
     // 소재 한 장의 면적에 재고 수량을 곱해서, 미니백 1개에 필요한
