@@ -101,7 +101,8 @@ class MaterialCandidateServiceTest {
         when(materialCandidateFilter.isEligible(
                 any(Material.class),
                 any(DesignRequirement.class),
-                anyDouble()
+                anyDouble(),
+                any(Template.class)
         )).thenReturn(true);
         when(materialMatchScorer.calculate(gradeB100, requirement))
                 .thenReturn(100);
