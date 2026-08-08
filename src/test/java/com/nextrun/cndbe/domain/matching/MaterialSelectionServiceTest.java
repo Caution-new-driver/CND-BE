@@ -16,6 +16,7 @@ import com.nextrun.cndbe.domain.matching.dto.MaterialSelectionResponse;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
+import com.nextrun.cndbe.domain.production.ProductionScenarioInvalidator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +42,9 @@ class MaterialSelectionServiceTest {
 
     @Mock
     private DropMaterialSelectionRepository selectionRepository;
+
+    @Mock
+    private ProductionScenarioInvalidator scenarioInvalidator;
 
     @InjectMocks
     private MaterialSelectionService service;
@@ -90,6 +94,7 @@ class MaterialSelectionServiceTest {
         assertEquals(main.getId(), response.mainMaterial().id());
         assertEquals(point.getId(), response.pointMaterial().id());
         verify(selectionRepository).save(any(DropMaterialSelection.class));
+        verify(scenarioInvalidator).invalidate(drop);
     }
 
     @Test
@@ -129,6 +134,7 @@ class MaterialSelectionServiceTest {
         assertSame(newMain, existing.getMainMaterial());
         assertNull(existing.getPointMaterial());
         assertNull(response.pointMaterial());
+        verify(scenarioInvalidator).invalidate(drop);
     }
 
     @Test
@@ -217,6 +223,7 @@ class MaterialSelectionServiceTest {
         assertEquals(MaterialStatus.AVAILABLE, main.getStatus());
         assertEquals(MaterialStatus.AVAILABLE, point.getStatus());
         verify(selectionRepository).delete(selection);
+        verify(scenarioInvalidator).invalidate(drop);
     }
 
     private Material material(String code, MaterialStatus status) {

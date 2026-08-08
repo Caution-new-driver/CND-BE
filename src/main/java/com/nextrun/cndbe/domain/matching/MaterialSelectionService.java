@@ -8,6 +8,7 @@ import com.nextrun.cndbe.domain.matching.dto.MaterialSelectionResponse;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
+import com.nextrun.cndbe.domain.production.ProductionScenarioInvalidator;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ public class MaterialSelectionService {
     private final MaterialCandidateRepository materialCandidateRepository;
     private final MaterialRepository materialRepository;
     private final DropMaterialSelectionRepository selectionRepository;
+    private final ProductionScenarioInvalidator scenarioInvalidator;
 
     @Transactional
     public MaterialSelectionResponse selectMaterials(
@@ -91,6 +93,9 @@ public class MaterialSelectionService {
                         : lockedMaterials.get(pointMaterialId)
         );
 
+        // 소재 조합이 다시 저장되면 이전 소재로 계산한 b12 결과는 더 이상 유효하지 않다.
+        scenarioInvalidator.invalidate(drop);
+
         return MaterialSelectionResponse.from(
                 selectionRepository.save(selection)
         );
@@ -100,12 +105,13 @@ public class MaterialSelectionService {
     // 해당 Drop이 잡고 있던 RESERVED 소재를 다시 AVAILABLE로 돌려놓음.
     @Transactional
     public void releaseSelectionForResearch(UUID dropId) {
-        findEditableDrop(dropId);
+        Drop drop = findEditableDrop(dropId);
 
         DropMaterialSelection selection = selectionRepository
                 .findByDrop_Id(dropId)
                 .orElse(null);
         if (selection == null) {
+            scenarioInvalidator.invalidate(drop);
             return;
         }
 
@@ -125,6 +131,7 @@ public class MaterialSelectionService {
                 );
 
         selectionRepository.delete(selection);
+        scenarioInvalidator.invalidate(drop);
     }
 
     private Drop findEditableDrop(UUID dropId) {

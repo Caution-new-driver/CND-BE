@@ -150,9 +150,24 @@
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
-| b12 | POST | `/api/drops/{dropId}/production-scenarios` | 소재 기준 수량·활용률·러기지 태그 수량 계산 → 시나리오 2건(단독/추가) 생성 | 제안 |
-| b12 | GET | `/api/drops/{dropId}/production-scenarios` | 계산된 시나리오 조회 | 제안 |
-| b12 | POST | `/api/drops/{dropId}/production-scenarios/{scenarioId}/select` | 최종 제작안 선택 (`Drop.selectedScenarioId` 갱신) | 제안 |
+| b12 | POST | `/api/drops/{dropId}/production-scenarios` | 소재 기준 수량·활용률·러기지 태그 수량 계산 → 시나리오 2건(단독/추가) 생성 | ✅ 구현됨 |
+| b12 | GET | `/api/drops/{dropId}/production-scenarios` | 계산된 시나리오 조회 | ✅ 구현됨 |
+| b12 | POST | `/api/drops/{dropId}/production-scenarios/{scenarioId}/select` | 최종 제작안 선택 (`Drop.selectedScenarioId` 갱신) | ✅ 구현됨 |
+
+### b12 계산 규칙
+
+- 템플릿과 소재 치수는 모두 `mm` 단위로 계산한다.
+- 직사각형 패턴을 큰 조각부터 2차원으로 배치하며 90도 회전을 허용한다.
+- 소재 여러 장은 서로 붙이지 않고 한 장씩 계산한 뒤 수량을 합산한다.
+- 포인트 소재가 없으면 모든 미니백 패턴을 주 소재에 배치한다.
+- 포인트 소재가 있으면 앞판·뒷판은 주 소재, 옆판/바닥은 포인트 소재에 배치한다.
+- 미니백 최종 수량은 주 소재와 포인트 소재가 각각 지원하는 수량 중 작은 값이다.
+- 러기지 태그 추가안은 미니백 배치 후 주 소재와 포인트 소재 양쪽의 남은 영역을 사용한다.
+- 같은 Drop으로 POST를 재호출하면 기존 결과와 선택 상태를 초기화하고 새 결과로 교체한다.
+- 계산 결과와 소재별 남은 사각형 영역은 DB에 저장하며 GET에서는 재계산하지 않는다.
+
+응답에는 `selectedScenarioId`와 두 개의 `scenarios`가 포함된다. 각 시나리오는
+제품별 수량·넘버링, 전체 활용률·사용/잔여 면적, 소재별 지원 수량과 잔여 사각형 목록을 반환한다.
 
 ---
 

@@ -44,5 +44,10 @@ public class ProductionScenario extends BaseEntity {
 
 	private Float materialUtilizationRate;
 
+	// 시나리오 계산 시점의 면적 스냅샷. 이후 소재 정보가 바뀌어도 결과가 흔들리지 않게 저장한다.
+	private Double totalAvailableAreaMm2;
+	private Double usedAreaMm2;
+	private Double remainingAreaMm2;
+
 	private Boolean isSelected;
 }
