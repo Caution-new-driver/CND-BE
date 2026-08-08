@@ -137,4 +137,11 @@ public class MaterialService {
     private static Specification<Material> hasMaterialType(MaterialType materialType) {
         return (root, query, cb) -> materialType == null ? null : cb.equal(root.get("materialType"), materialType);
     }
+
+    @Transactional
+    public void delete(UUID id) {
+        Material material = findMaterialOrThrow(id);
+        materialRepository.delete(material);
+    }
+
 }

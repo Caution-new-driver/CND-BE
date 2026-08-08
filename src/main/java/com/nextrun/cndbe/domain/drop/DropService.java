@@ -1,5 +1,10 @@
 package com.nextrun.cndbe.domain.drop;
 
+import com.nextrun.cndbe.domain.material.AccessoryColor;
+import com.nextrun.cndbe.domain.material.MaterialColor;
+import com.nextrun.cndbe.domain.material.MaterialGrade;
+import com.nextrun.cndbe.domain.material.MaterialPattern;
+import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
 import com.nextrun.cndbe.domain.material.TemplateRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +38,11 @@ public class DropService {
 	@Transactional
 	public DesignRequirement saveDesignRequirement(
 			java.util.UUID dropId,
-			String materialType,
-			String color,
-			String pattern,
-			String minGrade,
-			String accessoryColor,
+			MaterialType materialType,
+			MaterialColor color,
+			MaterialPattern pattern,
+			MaterialGrade minGrade,
+			AccessoryColor accessoryColor,
 			Boolean usePointMaterial) {
 
 		Drop drop = dropRepository.findById(dropId)
