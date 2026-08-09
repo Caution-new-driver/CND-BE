@@ -17,21 +17,28 @@ public class AccessorySeeder implements ApplicationRunner {
 
     private static final List<String> ACCESSORY_TYPES =
             List.of("지퍼", "링");
-    private static final List<String> COLORS =
-            List.of("GOLD", "SILVER", "BLACK");
+    private static final List<AccessoryColor> COLORS =
+            List.of(
+                    AccessoryColor.GOLD,
+                    AccessoryColor.SILVER,
+                    AccessoryColor.BLACK
+            );
 
     private final AccessoryRepository accessoryRepository;
 
     @Override
     public void run(ApplicationArguments args) {
         for (String accessoryType : ACCESSORY_TYPES) {
-            for (String color : COLORS) {
+            for (AccessoryColor color : COLORS) {
                 saveIfMissing(accessoryType, color);
             }
         }
     }
 
-    private void saveIfMissing(String accessoryType, String color) {
+    private void saveIfMissing(
+            String accessoryType,
+            AccessoryColor color
+    ) {
         if (accessoryRepository.existsByAccessoryTypeAndColor(
                 accessoryType,
                 color

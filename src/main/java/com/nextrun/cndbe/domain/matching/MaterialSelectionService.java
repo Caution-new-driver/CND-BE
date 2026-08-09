@@ -135,6 +135,14 @@ public class MaterialSelectionService {
         scenarioInvalidator.invalidate(drop);
     }
 
+    @Transactional(readOnly = true)
+    public Set<UUID> findSelectedMaterialIds(UUID dropId) {
+        return selectionRepository.findByDrop_Id(dropId)
+                .map(this::selectedMaterialIds)
+                .map(Set::copyOf)
+                .orElseGet(Set::of);
+    }
+
     private Drop findEditableDrop(UUID dropId) {
         Drop drop = dropRepository.findByIdForUpdate(dropId)
                 .orElseThrow(() -> new NoSuchElementException(

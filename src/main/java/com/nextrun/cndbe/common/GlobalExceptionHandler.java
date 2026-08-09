@@ -4,8 +4,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -26,5 +29,36 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IllegalStateException.class)
 	public ResponseEntity<Map<String, String>> handleConflict(IllegalStateException e) {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
+	}
+
+	// @Valid 요청 본문 검증 실패도 다른 에러와 동일한 {"message": "..."} 형식으로 반환한다.
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<Map<String, String>> handleValidation(
+			MethodArgumentNotValidException e) {
+		String message = e.getBindingResult().getFieldErrors().stream()
+				.findFirst()
+				.map(error -> error.getDefaultMessage() == null
+						? "요청 값이 올바르지 않습니다."
+						: error.getDefaultMessage())
+				.orElse("요청 값이 올바르지 않습니다.");
+		return ResponseEntity.badRequest().body(Map.of("message", message));
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<Map<String, String>> handleTypeMismatch(
+			MethodArgumentTypeMismatchException e) {
+		return ResponseEntity.badRequest().body(Map.of(
+				"message",
+				e.getName() + " 값의 형식이 올바르지 않습니다."
+		));
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<Map<String, String>> handleUnreadableBody(
+			HttpMessageNotReadableException e) {
+		return ResponseEntity.badRequest().body(Map.of(
+				"message",
+				"요청 본문 형식이 올바르지 않습니다."
+		));
 	}
 }

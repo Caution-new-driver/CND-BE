@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.matching;
 
 import com.nextrun.cndbe.domain.material.Accessory;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.Template;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +24,8 @@ public class TemplateAccessoryValidator {
 
     public void validate(
             Template template,
-            List<Accessory> selectedAccessories
+            List<Accessory> selectedAccessories,
+            AccessoryColor expectedColor
     ) {
         RequiredAccessory[] requirements = readRequirements(template);
 
@@ -59,6 +61,22 @@ public class TemplateAccessoryValidator {
                                                     + "개"
                                     )
                                     .collect(Collectors.joining(", "))
+            );
+        }
+
+        Set<AccessoryColor> selectedColors = selectedAccessories.stream()
+                .map(Accessory::getColor)
+                .collect(Collectors.toSet());
+        if (selectedColors.contains(null) || selectedColors.size() != 1) {
+            throw new IllegalArgumentException(
+                    "부자재 세트는 모두 같은 색상이어야 합니다."
+            );
+        }
+        if (expectedColor != null
+                && !selectedColors.contains(expectedColor)) {
+            throw new IllegalArgumentException(
+                    "디자인 조건의 부자재 색상과 일치해야 합니다: "
+                            + expectedColor
             );
         }
     }

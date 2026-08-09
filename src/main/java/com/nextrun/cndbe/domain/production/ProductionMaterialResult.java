@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +23,13 @@ import org.hibernate.annotations.UuidGenerator;
 
 // 시나리오별·소재별 계산 결과. GET이 재계산하지 않고 POST 당시 결과를 그대로 보여주기 위해 저장한다.
 @Entity
-@Table(name = "production_material_result")
+@Table(
+        name = "production_material_result",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_production_material_result_role",
+                columnNames = {"scenario_id", "material_role"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -44,6 +51,7 @@ public class ProductionMaterialResult extends BaseEntity {
     private Material material;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "material_role", nullable = false)
     private MaterialRole materialRole;
 
     // 이 소재가 담당하는 패턴만 보았을 때 지원 가능한 미니백 최대 수량.

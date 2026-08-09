@@ -14,6 +14,7 @@ import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 // b12의 수치 계산 담당. AI를 사용하지 않고 템플릿 치수와 선택 소재 크기로 항상 같은 결과를 만든다.
+// 제작 수량은 PatternPlacementCalculator가 실제 배치 가능하다고 확인한 보수적 수량이다.
 @Component
 public class ProductionScenarioCalculator {
 

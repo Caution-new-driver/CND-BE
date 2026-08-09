@@ -11,8 +11,8 @@ import tools.jackson.databind.json.JsonMapper;
  * 서비스가 켜지기 전에 항상 존재해야 하는 고정 템플릿(미니백/러기지 태그) 시드 데이터.
  * template 테이블이 비어있을 때만 1회 삽입 (재시작해도 중복 삽입 안 됨).
  *
- * [TODO] 아래 widthMm/heightMm는 전부 임시 placeholder 숫자임.
- * 팀이 실제 자투리 원단·가죽을 실측한 뒤 반드시 실측값으로 교체할 것.
+ * 아래 widthMm/heightMm는 MVP에서 합의한 고정 템플릿 치수다.
+ * 실제 생산에 적용하기 전에는 패턴 실측값과 다시 대조해야 한다.
  *
  * 단위는 Material 엔티티(widthMm/heightMm)와 맞춰 mm로 통일함 (기존 cm 표기는
  * b12 제작가능성 계산에서 Material과 Template 면적을 비교할 때 단위 불일치를 유발할 수 있어 수정).

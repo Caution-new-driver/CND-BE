@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.nextrun.cndbe.domain.material.Accessory;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.Template;
 import java.util.List;
 import java.util.UUID;
@@ -32,9 +33,10 @@ class TemplateAccessoryValidatorTest {
         assertDoesNotThrow(() -> validator.validate(
                 miniBagTemplate,
                 List.of(
-                        accessory("지퍼", "GOLD"),
-                        accessory("링", "GOLD")
-                )
+                        accessory("지퍼", AccessoryColor.GOLD),
+                        accessory("링", AccessoryColor.GOLD)
+                ),
+                AccessoryColor.GOLD
         ));
     }
 
@@ -44,7 +46,8 @@ class TemplateAccessoryValidatorTest {
                 IllegalArgumentException.class,
                 () -> validator.validate(
                         miniBagTemplate,
-                        List.of(accessory("지퍼", "GOLD"))
+                        List.of(accessory("지퍼", AccessoryColor.GOLD)),
+                        AccessoryColor.GOLD
                 )
         );
     }
@@ -56,10 +59,11 @@ class TemplateAccessoryValidatorTest {
                 () -> validator.validate(
                         miniBagTemplate,
                         List.of(
-                                accessory("지퍼", "GOLD"),
-                                accessory("지퍼", "SILVER"),
-                                accessory("링", "GOLD")
-                        )
+                                accessory("지퍼", AccessoryColor.GOLD),
+                                accessory("지퍼", AccessoryColor.SILVER),
+                                accessory("링", AccessoryColor.GOLD)
+                        ),
+                        AccessoryColor.GOLD
                 )
         );
     }
@@ -72,11 +76,45 @@ class TemplateAccessoryValidatorTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> validator.validate(broken, List.of())
+                () -> validator.validate(
+                        broken,
+                        List.of(),
+                        AccessoryColor.GOLD
+                )
         );
     }
 
-    private Accessory accessory(String type, String color) {
+    @Test
+    void 서로_다른_색상의_부자재를_한_세트로_선택할_수_없다() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validate(
+                        miniBagTemplate,
+                        List.of(
+                                accessory("지퍼", AccessoryColor.GOLD),
+                                accessory("링", AccessoryColor.BLACK)
+                        ),
+                        null
+                )
+        );
+    }
+
+    @Test
+    void 디자인_조건과_다른_색상의_세트를_선택할_수_없다() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validate(
+                        miniBagTemplate,
+                        List.of(
+                                accessory("지퍼", AccessoryColor.SILVER),
+                                accessory("링", AccessoryColor.SILVER)
+                        ),
+                        AccessoryColor.GOLD
+                )
+        );
+    }
+
+    private Accessory accessory(String type, AccessoryColor color) {
         return Accessory.builder()
                 .id(UUID.randomUUID())
                 .accessoryType(type)

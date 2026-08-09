@@ -25,7 +25,8 @@ public class ProductionScenarioController {
 
     @Operation(
             summary = "제작 가능 수량 계산 및 제작안 2건 저장",
-            description = "확정된 소재 조합을 기준으로 미니백 단독안과 러기지 태그 추가안을 다시 계산해 저장합니다."
+            description = "확정된 소재 조합을 기준으로 실제 배치 가능한 보수적 제작 수량을 계산하고, "
+                    + "미니백 단독안과 러기지 태그 추가안을 저장합니다."
     )
     @PostMapping
     public ProductionScenarioListResponse calculate(

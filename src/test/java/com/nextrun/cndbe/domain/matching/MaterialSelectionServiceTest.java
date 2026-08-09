@@ -20,6 +20,7 @@ import com.nextrun.cndbe.domain.production.ProductionScenarioInvalidator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -256,6 +257,23 @@ class MaterialSelectionServiceTest {
         assertEquals(MaterialStatus.AVAILABLE, point.getStatus());
         verify(selectionRepository).delete(selection);
         verify(scenarioInvalidator).invalidate(drop);
+    }
+
+    @Test
+    void 현재_Drop이_선택한_소재_ID를_재검색용으로_조회한다() {
+        Material main = material("MAIN", MaterialStatus.RESERVED);
+        Material point = material("POINT", MaterialStatus.RESERVED);
+        DropMaterialSelection selection = DropMaterialSelection.builder()
+                .drop(drop)
+                .mainMaterial(main)
+                .pointMaterial(point)
+                .build();
+        when(selectionRepository.findByDrop_Id(dropId))
+                .thenReturn(Optional.of(selection));
+
+        Set<UUID> selectedIds = service.findSelectedMaterialIds(dropId);
+
+        assertEquals(Set.of(main.getId(), point.getId()), selectedIds);
     }
 
     private Material material(String code, MaterialStatus status) {

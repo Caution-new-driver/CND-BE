@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -109,7 +111,8 @@ class MaterialCandidateServiceTest {
                 any(Material.class),
                 any(DesignRequirement.class),
                 anyDouble(),
-                anyList()
+                anyList(),
+                anySet()
         )).thenReturn(true);
         when(materialMatchScorer.calculate(gradeB100, requirement))
                 .thenReturn(100);
@@ -139,7 +142,7 @@ class MaterialCandidateServiceTest {
         assertEquals("추천 이유", response.candidates().get(0).aiReasons());
         assertEquals("주의사항", response.candidates().get(0).aiCautions());
 
-        verify(materialCandidateWriter).replace(
+        verify(materialCandidateWriter).replaceAfterResearch(
                 org.mockito.ArgumentMatchers.eq(dropId),
                 anyList()
         );
@@ -153,14 +156,46 @@ class MaterialCandidateServiceTest {
                 requirement,
                 List.of()
         )).thenReturn(new MaterialRecommendationResult(List.of()));
-        when(materialCandidateWriter.replace(dropId, List.of()))
+        when(materialCandidateWriter.replaceAfterResearch(dropId, List.of()))
                 .thenReturn(List.of());
 
         MaterialCandidateListResponse response =
                 service.calculateCandidates(dropId);
 
         assertEquals(List.of(), response.candidates());
-        verify(materialCandidateWriter).replace(dropId, List.of());
+        verify(materialCandidateWriter)
+                .replaceAfterResearch(dropId, List.of());
+    }
+
+    @Test
+    void AI_추천이_실패하면_기존_선택과_후보를_교체하지_않는다() {
+        prepareDropAndRequirement();
+        Material material = material("M-001", MaterialGrade.A, 0.9F);
+        when(materialRepository.findAll()).thenReturn(List.of(material));
+        when(materialCandidateFilter.isEligible(
+                any(Material.class),
+                any(DesignRequirement.class),
+                anyDouble(),
+                anyList(),
+                anySet()
+        )).thenReturn(true);
+        when(materialMatchScorer.calculate(material, requirement))
+                .thenReturn(100);
+        when(materialRecommendationClient.recommend(
+                any(DesignRequirement.class),
+                anyList()
+        )).thenThrow(new IllegalStateException("OpenAI 호출 실패"));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.calculateCandidates(dropId)
+        );
+
+        verify(materialCandidateWriter, never())
+                .replaceAfterResearch(
+                        org.mockito.ArgumentMatchers.eq(dropId),
+                        anyList()
+                );
     }
 
     @Test
@@ -212,6 +247,8 @@ class MaterialCandidateServiceTest {
                 .thenReturn(Optional.of(drop));
         when(designRequirementRepository.findByDrop_Id(dropId))
                 .thenReturn(Optional.of(requirement));
+        when(materialSelectionService.findSelectedMaterialIds(dropId))
+                .thenReturn(java.util.Set.of());
         when(templatePatternParser.parse(drop.getTemplate()))
                 .thenReturn(List.of(
                         new PatternPiece(
@@ -245,7 +282,7 @@ class MaterialCandidateServiceTest {
     }
 
     private void mockSaveAll() {
-        when(materialCandidateWriter.replace(
+        when(materialCandidateWriter.replaceAfterResearch(
                 org.mockito.ArgumentMatchers.eq(dropId),
                 anyList()
         ))

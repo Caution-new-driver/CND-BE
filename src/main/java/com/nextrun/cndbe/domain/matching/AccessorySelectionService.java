@@ -3,6 +3,8 @@ package com.nextrun.cndbe.domain.matching;
 import com.nextrun.cndbe.domain.drop.Drop;
 import com.nextrun.cndbe.domain.drop.DropRepository;
 import com.nextrun.cndbe.domain.drop.DropStatus;
+import com.nextrun.cndbe.domain.drop.DesignRequirement;
+import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionRequest;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionResponse;
 import com.nextrun.cndbe.domain.material.Accessory;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccessorySelectionService {
 
     private final DropRepository dropRepository;
+    private final DesignRequirementRepository designRequirementRepository;
     private final AccessoryRepository accessoryRepository;
     private final DropAccessorySelectionRepository selectionRepository;
     private final TemplateAccessoryValidator templateAccessoryValidator;
@@ -45,10 +48,17 @@ public class AccessorySelectionService {
             );
         }
 
+        DesignRequirement requirement = designRequirementRepository
+                .findByDrop_Id(dropId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "디자인 조건을 찾을 수 없습니다: " + dropId
+                ));
+
         // 미니백 템플릿이 요구하는 지퍼·링 등이 빠지거나 중복되지 않았는지 확인함.
         templateAccessoryValidator.validate(
                 drop.getTemplate(),
-                accessories
+                accessories,
+                requirement.getAccessoryColor()
         );
 
         // findAllById의 반환 순서는 보장되지 않으므로 요청 순서대로 다시 정렬함.

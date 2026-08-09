@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.matching.dto;
 
 import com.nextrun.cndbe.domain.matching.DropAccessorySelection;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ public record AccessorySelectionResponse(
             UUID selectionId,
             UUID accessoryId,
             String accessoryType,
-            String color
+            AccessoryColor color
     ) {
     }
 }

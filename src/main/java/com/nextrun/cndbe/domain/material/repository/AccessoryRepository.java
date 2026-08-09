@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.material.repository;
 
 import com.nextrun.cndbe.domain.material.Accessory;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,6 @@ public interface AccessoryRepository extends JpaRepository<Accessory, UUID> {
     // Seeder가 서버 재시작 때 같은 종류·색상 조합을 중복으로 만들지 않도록 확인함.
     boolean existsByAccessoryTypeAndColor(
             String accessoryType,
-            String color
+            AccessoryColor color
     );
 }

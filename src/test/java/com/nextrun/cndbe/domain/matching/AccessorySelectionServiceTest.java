@@ -4,15 +4,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.nextrun.cndbe.domain.drop.Drop;
+import com.nextrun.cndbe.domain.drop.DesignRequirement;
+import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.DropRepository;
 import com.nextrun.cndbe.domain.drop.DropStatus;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionRequest;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionResponse;
 import com.nextrun.cndbe.domain.material.Accessory;
+import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.repository.AccessoryRepository;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -32,6 +36,9 @@ class AccessorySelectionServiceTest {
 
     @Mock
     private DropRepository dropRepository;
+
+    @Mock
+    private DesignRequirementRepository designRequirementRepository;
 
     @Mock
     private AccessoryRepository accessoryRepository;
@@ -59,14 +66,18 @@ class AccessorySelectionServiceTest {
 
     @Test
     void 선택한_부자재를_요청_순서대로_교체_저장한다() {
-        Accessory zipper = accessory("지퍼", "GOLD");
-        Accessory ring = accessory("링", "GOLD");
+        Accessory zipper = accessory("지퍼", AccessoryColor.GOLD);
+        Accessory ring = accessory("링", AccessoryColor.GOLD);
 
         when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
         // DB 반환 순서가 요청 순서와 달라도 응답은 요청 순서를 유지해야 함.
         when(accessoryRepository.findAllById(
                 List.of(zipper.getId(), ring.getId())
         )).thenReturn(List.of(ring, zipper));
+        when(designRequirementRepository.findByDrop_Id(dropId))
+                .thenReturn(Optional.of(DesignRequirement.builder()
+                        .accessoryColor(AccessoryColor.GOLD)
+                        .build()));
         when(selectionRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> {
                     List<DropAccessorySelection> selections =
@@ -95,7 +106,8 @@ class AccessorySelectionServiceTest {
         );
         verify(templateAccessoryValidator).validate(
                 drop.getTemplate(),
-                List.of(ring, zipper)
+                List.of(ring, zipper),
+                AccessoryColor.GOLD
         );
 
         InOrder order = inOrder(selectionRepository);
@@ -137,7 +149,7 @@ class AccessorySelectionServiceTest {
 
     @Test
     void 존재하지_않는_부자재가_포함되면_저장하지_않는다() {
-        Accessory existing = accessory("지퍼", "SILVER");
+        Accessory existing = accessory("지퍼", AccessoryColor.SILVER);
         UUID missingId = UUID.randomUUID();
         when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
         when(accessoryRepository.findAllById(
@@ -171,7 +183,65 @@ class AccessorySelectionServiceTest {
         );
     }
 
-    private Accessory accessory(String type, String color) {
+    @Test
+    void 디자인_조건과_다른_부자재_색상은_저장하지_않는다() {
+        Accessory zipper = accessory("지퍼", AccessoryColor.SILVER);
+        Accessory ring = accessory("링", AccessoryColor.SILVER);
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.of(drop));
+        when(accessoryRepository.findAllById(
+                List.of(zipper.getId(), ring.getId())
+        )).thenReturn(List.of(zipper, ring));
+        when(designRequirementRepository.findByDrop_Id(dropId))
+                .thenReturn(Optional.of(DesignRequirement.builder()
+                        .accessoryColor(AccessoryColor.GOLD)
+                        .build()));
+        doThrow(new IllegalArgumentException(
+                "디자인 조건의 부자재 색상과 일치해야 합니다."
+        )).when(templateAccessoryValidator).validate(
+                drop.getTemplate(),
+                List.of(zipper, ring),
+                AccessoryColor.GOLD
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.selectAccessories(
+                        dropId,
+                        new AccessorySelectionRequest(
+                                List.of(zipper.getId(), ring.getId())
+                        )
+                )
+        );
+    }
+
+    @Test
+    void 디자인_조건이_없으면_부자재를_선택할_수_없다() {
+        Accessory zipper = accessory("지퍼", AccessoryColor.GOLD);
+        Accessory ring = accessory("링", AccessoryColor.GOLD);
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.of(drop));
+        when(accessoryRepository.findAllById(
+                List.of(zipper.getId(), ring.getId())
+        )).thenReturn(List.of(zipper, ring));
+        when(designRequirementRepository.findByDrop_Id(dropId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.selectAccessories(
+                        dropId,
+                        new AccessorySelectionRequest(
+                                List.of(zipper.getId(), ring.getId())
+                        )
+                )
+        );
+    }
+
+    private Accessory accessory(
+            String type,
+            AccessoryColor color
+    ) {
         return Accessory.builder()
                 .id(UUID.randomUUID())
                 .accessoryType(type)

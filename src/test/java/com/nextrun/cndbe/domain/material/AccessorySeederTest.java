@@ -29,7 +29,7 @@ class AccessorySeederTest {
     void 없는_지퍼와_링_색상_조합_여섯_개를_등록한다() {
         when(accessoryRepository.existsByAccessoryTypeAndColor(
                 any(String.class),
-                any(String.class)
+                any(AccessoryColor.class)
         )).thenReturn(false);
 
         seeder.run(new DefaultApplicationArguments(new String[0]));
@@ -45,7 +45,7 @@ class AccessorySeederTest {
     void 모든_조합이_이미_있으면_다시_저장하지_않는다() {
         when(accessoryRepository.existsByAccessoryTypeAndColor(
                 any(String.class),
-                any(String.class)
+                any(AccessoryColor.class)
         )).thenReturn(true);
 
         seeder.run(new DefaultApplicationArguments(new String[0]));
