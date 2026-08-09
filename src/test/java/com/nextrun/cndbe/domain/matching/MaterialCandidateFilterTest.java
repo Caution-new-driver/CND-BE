@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
+import com.nextrun.cndbe.common.calculation.PatternPiece;
 import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
@@ -13,6 +14,7 @@ import com.nextrun.cndbe.domain.material.MaterialPattern;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -24,10 +26,11 @@ class MaterialCandidateFilterTest {
 
     private final MaterialCandidateFilter filter =
             new MaterialCandidateFilter(
-                    new TemplatePatternParser(JsonMapper.builder().build()),
                     new PatternPlacementCalculator()
             );
-    private final Template miniBagTemplate = miniBagTemplate();
+    private final List<PatternPiece> miniBagPatternPieces =
+            new TemplatePatternParser(JsonMapper.builder().build())
+                    .parse(miniBagTemplate());
 
     @Test
     void 필수_조건을_모두_충족하면_후보가_된다() {
@@ -41,7 +44,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement,
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertTrue(result);
@@ -56,7 +59,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);
@@ -71,7 +74,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);
@@ -83,7 +86,7 @@ class MaterialCandidateFilterTest {
                 eligibleMaterial(),
                 requirement(MaterialType.LEATHER, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);
@@ -98,7 +101,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.B),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);
@@ -113,7 +116,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.B),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertTrue(result);
@@ -130,7 +133,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);
@@ -147,7 +150,7 @@ class MaterialCandidateFilterTest {
                 material,
                 requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
                 MINI_BAG_AREA_MM2,
-                miniBagTemplate
+                miniBagPatternPieces
         );
 
         assertFalse(result);

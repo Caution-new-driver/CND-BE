@@ -46,9 +46,26 @@ public class TemplatePatternParser {
     }
 
     private PatternPiece toPatternPiece(RawPatternPiece raw) {
+        if (raw == null) {
+            throw new IllegalStateException(
+                    "템플릿 패턴 조각 정보가 올바르지 않습니다."
+            );
+        }
         double widthMm = resolveMillimeter(raw.widthMm(), raw.widthCm());
         double heightMm = resolveMillimeter(raw.heightMm(), raw.heightCm());
         int quantity = raw.quantity() == null ? 0 : raw.quantity();
+        if (raw.pieceName() == null
+                || raw.pieceName().isBlank()
+                || !Double.isFinite(widthMm)
+                || !Double.isFinite(heightMm)
+                || widthMm <= 0
+                || heightMm <= 0
+                || quantity <= 0) {
+            throw new IllegalStateException(
+                    "템플릿 패턴 조각의 치수 또는 수량이 올바르지 않습니다: "
+                            + raw.pieceName()
+            );
+        }
         return new PatternPiece(
                 raw.pieceName(),
                 widthMm,

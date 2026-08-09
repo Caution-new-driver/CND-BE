@@ -1,11 +1,11 @@
 package com.nextrun.cndbe.domain.matching;
 
 import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
-import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
+import com.nextrun.cndbe.common.calculation.PatternPiece;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
-import com.nextrun.cndbe.domain.material.Template;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class MaterialCandidateFilter {
 
-    private final TemplatePatternParser templatePatternParser;
     private final PatternPlacementCalculator patternPlacementCalculator;
 
     // 아래 조건은 AND 관계라서 하나라도 실패하면 추천 후보에서 제외됨.
@@ -23,13 +22,13 @@ public class MaterialCandidateFilter {
             Material material,
             DesignRequirement requirement,
             double requiredAreaMm2,
-            Template template
+            List<PatternPiece> patternPieces
     ) {
         return hasRequiredData(material)
                 && matchesMaterialType(material, requirement)
                 && meetsMinimumGrade(material, requirement)
                 && hasEnoughArea(material, requiredAreaMm2)
-                && canPlacePatternOnOneSheet(material, template);
+                && canPlacePatternOnOneSheet(material, patternPieces);
     }
 
     // AVAILABLE 재고이면서 AI 태깅(color/pattern)과 제작 계산용 값이
@@ -93,12 +92,12 @@ public class MaterialCandidateFilter {
     // 소재 한 장에 미니백 패턴 한 세트가 실제로 들어가는지도 확인한다.
     private boolean canPlacePatternOnOneSheet(
             Material material,
-            Template template
+            List<PatternPiece> patternPieces
     ) {
         return patternPlacementCalculator.calculateCapacityPerSheet(
                 material.getWidthMm(),
                 material.getHeightMm(),
-                templatePatternParser.parse(template)
+                patternPieces
         ) >= 1;
     }
 }
