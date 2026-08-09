@@ -29,8 +29,7 @@
 
 ### Ground Rule
 - **절대 `application-local.yaml`을 커밋하지 말 것** (`.gitignore` 등록돼 있지만 재확인 습관화)
-- 로컬 비밀값이 필요하면 담당자(김재현)에게 요청 — Slack DM 등 비공개 채널로만 전달
-- 확정 안 된 API 스펙(`docs/api-draft.md`의 "제안" 상태)에 의존하는 코드를 짤 땐, 관련 담당자와 먼저 필드명 맞추고 시작
+- 로컬 비밀값(`application-local.yaml`)이 필요하면 노션 확인
 
 ## 개발 환경
 - **Java 21 필수** (Spring Boot 4.1.0). 로컬 기본 `java`가 17일 수 있으니 실행 시 `JAVA_HOME=$(/usr/libexec/java_home -v 21)` 지정
@@ -43,4 +42,4 @@
 2. 담당자에게 받은 `application-local.yaml`을 `src/main/resources/`에 그대로 저장
 3. 로컬 실행: `JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bootRun`
 4. `http://localhost:8080/actuator/health`가 `{"status":"UP"}` 뜨면 정상
-5. `dev`에서 `feat/...` 브랜치 따서 작업 → 로컬 확인 → 커밋 → `dev` 병합 → push
+5. `dev`에서 `feat/...` 브랜치 따서 작업 → 로컬 확인 → 커밋 → push → pr 올리기 → 코드리뷰 받고 수정 → `dev` 병합

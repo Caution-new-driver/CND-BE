@@ -10,6 +10,7 @@ import com.nextrun.cndbe.domain.material.repository.AccessoryRepository;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -39,7 +40,7 @@ public class AccessorySelectionService {
         List<Accessory> accessories = accessoryRepository
                 .findAllById(requestedIds);
         if (accessories.size() != requestedIds.size()) {
-            throw new IllegalArgumentException(
+            throw new NoSuchElementException(
                     "존재하지 않는 부자재가 포함되어 있습니다."
             );
         }
@@ -77,7 +78,7 @@ public class AccessorySelectionService {
 
     private Drop findEditableDrop(UUID dropId) {
         Drop drop = dropRepository.findByIdForUpdate(dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         "Drop을 찾을 수 없습니다: " + dropId
                 ));
 

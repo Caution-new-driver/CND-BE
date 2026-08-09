@@ -17,6 +17,7 @@ import com.nextrun.cndbe.domain.production.dto.ProductionScenarioResponse;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -78,7 +79,7 @@ public class ProductionScenarioService {
     @Transactional(readOnly = true)
     public ProductionScenarioListResponse get(UUID dropId) {
         Drop drop = dropRepository.findById(dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         "Drop을 찾을 수 없습니다: " + dropId
                 ));
         if (scenarioRepository
@@ -99,7 +100,7 @@ public class ProductionScenarioService {
         Drop drop = findEditableDrop(dropId);
         ProductionScenario selected = scenarioRepository
                 .findByIdAndDrop_Id(scenarioId, dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         "해당 Drop의 제작 시나리오를 찾을 수 없습니다: "
                                 + scenarioId
                 ));
@@ -262,7 +263,7 @@ public class ProductionScenarioService {
 
     private Drop findEditableDrop(UUID dropId) {
         Drop drop = dropRepository.findByIdForUpdate(dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         "Drop을 찾을 수 없습니다: " + dropId
                 ));
         if (drop.getStatus() != DropStatus.DRAFT) {

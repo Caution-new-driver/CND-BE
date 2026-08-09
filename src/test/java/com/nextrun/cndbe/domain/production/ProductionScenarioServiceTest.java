@@ -4,6 +4,7 @@ import com.nextrun.cndbe.common.calculation.RemainingRegion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -24,6 +25,7 @@ import com.nextrun.cndbe.domain.production.ProductionCalculationResult.ScenarioC
 import com.nextrun.cndbe.domain.production.dto.ProductionScenarioListResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -236,6 +238,30 @@ class ProductionScenarioServiceTest {
         assertEquals(
                 ProductType.LUGGAGE_TAG,
                 response.scenarios().getFirst().items().getLast().productType()
+        );
+    }
+
+    @Test
+    void 존재하지_않는_Drop의_제작안_조회는_404_예외를_던진다() {
+        when(dropRepository.findById(dropId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.get(dropId)
+        );
+    }
+
+    @Test
+    void 해당_Drop에_없는_제작안_선택은_404_예외를_던진다() {
+        UUID scenarioId = UUID.randomUUID();
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.of(drop));
+        when(scenarioRepository.findByIdAndDrop_Id(scenarioId, dropId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.select(dropId, scenarioId)
         );
     }
 

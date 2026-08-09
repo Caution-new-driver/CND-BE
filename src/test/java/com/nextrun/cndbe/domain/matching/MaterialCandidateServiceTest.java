@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
+import com.nextrun.cndbe.common.calculation.PatternPiece;
+import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.Drop;
 import com.nextrun.cndbe.domain.drop.DropRepository;
@@ -23,12 +24,12 @@ import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,7 +54,10 @@ class MaterialCandidateServiceTest {
     private MaterialCandidateRepository materialCandidateRepository;
 
     @Mock
-    private TemplateAreaCalculator templateAreaCalculator;
+    private MaterialCandidateWriter materialCandidateWriter;
+
+    @Mock
+    private TemplatePatternParser templatePatternParser;
 
     @Mock
     private MaterialCandidateFilter materialCandidateFilter;
@@ -83,10 +87,10 @@ class MaterialCandidateServiceTest {
                 .build();
         requirement = DesignRequirement.builder()
                 .drop(drop)
-                .materialType("COATED_CANVAS")
-                .color("BEIGE")
-                .pattern("STRIPE")
-                .minGrade("A")
+                .materialType(MaterialType.COATED_CANVAS)
+                .color(MaterialColor.BEIGE)
+                .pattern(MaterialPattern.STRIPE)
+                .minGrade(MaterialGrade.A)
                 .build();
     }
 
@@ -105,7 +109,7 @@ class MaterialCandidateServiceTest {
                 any(Material.class),
                 any(DesignRequirement.class),
                 anyDouble(),
-                any(Template.class)
+                anyList()
         )).thenReturn(true);
         when(materialMatchScorer.calculate(gradeB100, requirement))
                 .thenReturn(100);
@@ -135,11 +139,10 @@ class MaterialCandidateServiceTest {
         assertEquals("추천 이유", response.candidates().get(0).aiReasons());
         assertEquals("주의사항", response.candidates().get(0).aiCautions());
 
-        InOrder persistenceOrder = inOrder(materialCandidateRepository);
-        persistenceOrder.verify(materialCandidateRepository)
-                .deleteAllByDrop_Id(dropId);
-        persistenceOrder.verify(materialCandidateRepository)
-                .saveAll(anyList());
+        verify(materialCandidateWriter).replace(
+                org.mockito.ArgumentMatchers.eq(dropId),
+                anyList()
+        );
     }
 
     @Test
@@ -150,15 +153,14 @@ class MaterialCandidateServiceTest {
                 requirement,
                 List.of()
         )).thenReturn(new MaterialRecommendationResult(List.of()));
-        when(materialCandidateRepository.saveAll(anyList()))
+        when(materialCandidateWriter.replace(dropId, List.of()))
                 .thenReturn(List.of());
 
         MaterialCandidateListResponse response =
                 service.calculateCandidates(dropId);
 
         assertEquals(List.of(), response.candidates());
-        verify(materialCandidateRepository).deleteAllByDrop_Id(dropId);
-        verify(materialCandidateRepository).saveAll(List.of());
+        verify(materialCandidateWriter).replace(dropId, List.of());
     }
 
     @Test
@@ -183,32 +185,42 @@ class MaterialCandidateServiceTest {
 
     @Test
     void 존재하지_않는_Drop이면_예외가_발생한다() {
-        when(dropRepository.findById(dropId)).thenReturn(Optional.empty());
+        when(dropRepository.findByIdWithTemplate(dropId))
+                .thenReturn(Optional.empty());
 
         assertThrows(
-                IllegalArgumentException.class,
+                NoSuchElementException.class,
                 () -> service.calculateCandidates(dropId)
         );
     }
 
     @Test
     void 디자인_조건이_없으면_예외가_발생한다() {
-        when(dropRepository.findById(dropId)).thenReturn(Optional.of(drop));
+        when(dropRepository.findByIdWithTemplate(dropId))
+                .thenReturn(Optional.of(drop));
         when(designRequirementRepository.findByDrop_Id(dropId))
                 .thenReturn(Optional.empty());
 
         assertThrows(
-                IllegalArgumentException.class,
+                NoSuchElementException.class,
                 () -> service.calculateCandidates(dropId)
         );
     }
 
     private void prepareDropAndRequirement() {
-        when(dropRepository.findById(dropId)).thenReturn(Optional.of(drop));
+        when(dropRepository.findByIdWithTemplate(dropId))
+                .thenReturn(Optional.of(drop));
         when(designRequirementRepository.findByDrop_Id(dropId))
                 .thenReturn(Optional.of(requirement));
-        when(templateAreaCalculator.calculateRequiredArea(drop.getTemplate()))
-                .thenReturn(MINI_BAG_AREA_MM2);
+        when(templatePatternParser.parse(drop.getTemplate()))
+                .thenReturn(List.of(
+                        new PatternPiece(
+                                "미니백",
+                                MINI_BAG_AREA_MM2,
+                                1,
+                                1
+                        )
+                ));
     }
 
     private void mockAiRecommendations() {
@@ -233,10 +245,13 @@ class MaterialCandidateServiceTest {
     }
 
     private void mockSaveAll() {
-        when(materialCandidateRepository.saveAll(anyList()))
+        when(materialCandidateWriter.replace(
+                org.mockito.ArgumentMatchers.eq(dropId),
+                anyList()
+        ))
                 .thenAnswer(invocation -> {
                     List<MaterialCandidate> candidates =
-                            invocation.getArgument(0);
+                            invocation.getArgument(1);
                     candidates.forEach(candidate ->
                             candidate.setId(UUID.randomUUID())
                     );

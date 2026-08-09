@@ -3,6 +3,7 @@ package com.nextrun.cndbe.domain.matching;
 import com.nextrun.cndbe.domain.matching.dto.MaterialSelectionRequest;
 import com.nextrun.cndbe.domain.matching.dto.MaterialSelectionResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -14,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 // f4에서 사용자가 직접 고른 주 소재와 선택적 포인트 소재를 확정 저장하는 b11 API.
-@Tag(name = "Material Selection")
+@Tag(
+        name = "Material Selection",
+        description = "b11 주 소재·포인트 소재 확정 API"
+)
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/drops/{dropId}/material-selection")
@@ -28,6 +32,7 @@ public class MaterialSelectionController {
     )
     @PostMapping
     public MaterialSelectionResponse selectMaterials(
+            @Parameter(description = "소재 조합을 확정할 Drop ID")
             @PathVariable UUID dropId,
             @Valid @RequestBody MaterialSelectionRequest request
     ) {

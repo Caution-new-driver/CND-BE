@@ -15,6 +15,7 @@ import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionResponse;
 import com.nextrun.cndbe.domain.material.Accessory;
 import com.nextrun.cndbe.domain.material.repository.AccessoryRepository;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,6 +120,22 @@ class AccessorySelectionServiceTest {
     }
 
     @Test
+    void 존재하지_않는_Drop이면_404_예외를_던진다() {
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.selectAccessories(
+                        dropId,
+                        new AccessorySelectionRequest(
+                                List.of(UUID.randomUUID())
+                        )
+                )
+        );
+    }
+
+    @Test
     void 존재하지_않는_부자재가_포함되면_저장하지_않는다() {
         Accessory existing = accessory("지퍼", "SILVER");
         UUID missingId = UUID.randomUUID();
@@ -128,7 +145,7 @@ class AccessorySelectionServiceTest {
         )).thenReturn(List.of(existing));
 
         assertThrows(
-                IllegalArgumentException.class,
+                NoSuchElementException.class,
                 () -> service.selectAccessories(
                         dropId,
                         new AccessorySelectionRequest(

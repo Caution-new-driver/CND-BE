@@ -1,17 +1,13 @@
 package com.nextrun.cndbe.domain.matching;
 
 import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
-import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
+import com.nextrun.cndbe.common.calculation.PatternPiece;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
-import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
-import com.nextrun.cndbe.domain.material.MaterialType;
-import com.nextrun.cndbe.domain.material.Template;
-import java.util.Locale;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 // b9의 필수조건 필터. 전체 재고 중에서 디자인 조건과 제작 최소조건을
 // 모두 통과한 소재만 점수 계산 대상으로 넘김.
@@ -19,7 +15,6 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class MaterialCandidateFilter {
 
-    private final TemplatePatternParser templatePatternParser;
     private final PatternPlacementCalculator patternPlacementCalculator;
 
     // 아래 조건은 AND 관계라서 하나라도 실패하면 추천 후보에서 제외됨.
@@ -27,13 +22,13 @@ public class MaterialCandidateFilter {
             Material material,
             DesignRequirement requirement,
             double requiredAreaMm2,
-            Template template
+            List<PatternPiece> patternPieces
     ) {
         return hasRequiredData(material)
                 && matchesMaterialType(material, requirement)
                 && meetsMinimumGrade(material, requirement)
                 && hasEnoughArea(material, requiredAreaMm2)
-                && canPlacePatternOnOneSheet(material, template);
+                && canPlacePatternOnOneSheet(material, patternPieces);
     }
 
     // AVAILABLE 재고이면서 AI 태깅(color/pattern)과 제작 계산용 값이
@@ -53,29 +48,16 @@ public class MaterialCandidateFilter {
     }
 
     // 소재 종류 조건을 입력하지 않았다면 모든 종류를 허용하고,
-    // 입력했다면 프론트와 합의한 MaterialType enum 코드로 정확히 비교함.
+    // 입력했다면 MaterialType enum을 직접 비교함.
     private boolean matchesMaterialType(
             Material material,
             DesignRequirement requirement
     ) {
-        if (!StringUtils.hasText(requirement.getMaterialType())) {
+        if (requirement.getMaterialType() == null) {
             return true;
         }
 
-        try {
-            MaterialType requiredType = MaterialType.valueOf(
-                    requirement.getMaterialType()
-                            .trim()
-                            .toUpperCase(Locale.ROOT)
-            );
-
-            return material.getMaterialType() == requiredType;
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "지원하지 않는 소재 종류입니다: "
-                            + requirement.getMaterialType()
-            );
-        }
+        return material.getMaterialType() == requirement.getMaterialType();
     }
 
     // 등급 순서는 A가 가장 좋고 C가 가장 낮음.
@@ -84,25 +66,12 @@ public class MaterialCandidateFilter {
             Material material,
             DesignRequirement requirement
     ) {
-        if (!StringUtils.hasText(requirement.getMinGrade())) {
+        if (requirement.getMinGrade() == null) {
             return true;
         }
 
-        try {
-            MaterialGrade minimumGrade = MaterialGrade.valueOf(
-                    requirement.getMinGrade()
-                            .trim()
-                            .toUpperCase(Locale.ROOT)
-            );
-
-            return material.getGrade().ordinal()
-                    <= minimumGrade.ordinal();
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "지원하지 않는 소재 등급입니다: "
-                            + requirement.getMinGrade()
-            );
-        }
+        return material.getGrade().ordinal()
+                <= requirement.getMinGrade().ordinal();
     }
 
     // 소재 한 장의 면적에 재고 수량을 곱해서, 미니백 1개에 필요한
@@ -123,12 +92,12 @@ public class MaterialCandidateFilter {
     // 소재 한 장에 미니백 패턴 한 세트가 실제로 들어가는지도 확인한다.
     private boolean canPlacePatternOnOneSheet(
             Material material,
-            Template template
+            List<PatternPiece> patternPieces
     ) {
         return patternPlacementCalculator.calculateCapacityPerSheet(
                 material.getWidthMm(),
                 material.getHeightMm(),
-                templatePatternParser.parse(template)
+                patternPieces
         ) >= 1;
     }
 }

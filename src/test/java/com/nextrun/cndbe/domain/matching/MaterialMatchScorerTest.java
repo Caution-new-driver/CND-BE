@@ -17,7 +17,7 @@ class MaterialMatchScorerTest {
     void 색상과_패턴이_모두_일치하면_100점이다() {
         int score = scorer.calculate(
                 material(MaterialColor.BEIGE, MaterialPattern.STRIPE),
-                requirement("BEIGE", "STRIPE")
+                requirement(MaterialColor.BEIGE, MaterialPattern.STRIPE)
         );
 
         assertEquals(100, score);
@@ -27,7 +27,7 @@ class MaterialMatchScorerTest {
     void 색상과_패턴_중_하나만_일치하면_50점이다() {
         int score = scorer.calculate(
                 material(MaterialColor.BEIGE, MaterialPattern.SOLID),
-                requirement("BEIGE", "STRIPE")
+                requirement(MaterialColor.BEIGE, MaterialPattern.STRIPE)
         );
 
         assertEquals(50, score);
@@ -37,7 +37,7 @@ class MaterialMatchScorerTest {
     void 색상과_패턴이_모두_다르면_0점이다() {
         int score = scorer.calculate(
                 material(MaterialColor.BLACK, MaterialPattern.SOLID),
-                requirement("BEIGE", "STRIPE")
+                requirement(MaterialColor.BEIGE, MaterialPattern.STRIPE)
         );
 
         assertEquals(0, score);
@@ -64,8 +64,8 @@ class MaterialMatchScorerTest {
     }
 
     private DesignRequirement requirement(
-            String color,
-            String pattern
+            MaterialColor color,
+            MaterialPattern pattern
     ) {
         return DesignRequirement.builder()
                 .color(color)

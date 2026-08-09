@@ -18,6 +18,7 @@ import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
 import com.nextrun.cndbe.domain.production.ProductionScenarioInvalidator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -196,6 +197,37 @@ class MaterialSelectionServiceTest {
                 () -> service.selectMaterials(
                         dropId,
                         new MaterialSelectionRequest(UUID.randomUUID(), null)
+                )
+        );
+    }
+
+    @Test
+    void 존재하지_않는_Drop이면_404_예외를_던진다() {
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.selectMaterials(
+                        dropId,
+                        new MaterialSelectionRequest(UUID.randomUUID(), null)
+                )
+        );
+    }
+
+    @Test
+    void 해당_Drop에_없는_후보이면_404_예외를_던진다() {
+        UUID candidateId = UUID.randomUUID();
+        when(dropRepository.findByIdForUpdate(dropId))
+                .thenReturn(Optional.of(drop));
+        when(materialCandidateRepository.findByIdAndDrop_Id(candidateId, dropId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                NoSuchElementException.class,
+                () -> service.selectMaterials(
+                        dropId,
+                        new MaterialSelectionRequest(candidateId, null)
                 )
         );
     }

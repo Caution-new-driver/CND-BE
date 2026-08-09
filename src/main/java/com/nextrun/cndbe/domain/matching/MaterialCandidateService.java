@@ -1,5 +1,7 @@
 package com.nextrun.cndbe.domain.matching;
 
+import com.nextrun.cndbe.common.calculation.PatternPiece;
+import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.Drop;
@@ -10,6 +12,7 @@ import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,25 +30,29 @@ public class MaterialCandidateService {
     private final DesignRequirementRepository designRequirementRepository;
     private final MaterialRepository materialRepository;
     private final MaterialCandidateRepository materialCandidateRepository;
-    private final TemplateAreaCalculator templateAreaCalculator;
+    private final MaterialCandidateWriter materialCandidateWriter;
+    private final TemplatePatternParser templatePatternParser;
     private final MaterialCandidateFilter materialCandidateFilter;
     private final MaterialMatchScorer materialMatchScorer;
     private final MaterialRecommendationClient materialRecommendationClient;
     private final MaterialSelectionService materialSelectionService;
 
-    @Transactional
     public MaterialCandidateListResponse calculateCandidates(UUID dropId) {
-        // 1. 추천의 기준이 되는 Drop과 디자인 조건이 실제로 저장돼 있는지 확인.
-        Drop drop = findDrop(dropId);
+        // 1. 짧은 DB 조회가 끝난 뒤에도 템플릿을 읽을 수 있도록 함께 조회한다.
+        Drop drop = findDropWithTemplate(dropId);
         DesignRequirement requirement = findDesignRequirement(dropId);
 
         // 이전에 선택한 소재가 있다면 재검색 전에 예약을 풀어야
         // 그 소재도 AVAILABLE 후보로 다시 평가될 수 있음.
         materialSelectionService.releaseSelectionForResearch(dropId);
 
-        // 2. 미니백 1개 제작에 필요한 패턴 조각의 전체 면적을 mm²로 계산.
-        double requiredAreaMm2 =
-                templateAreaCalculator.calculateRequiredArea(drop.getTemplate());
+        // 2. 템플릿 JSON은 한 번만 파싱한 뒤 면적 계산과 모든 소재 필터에서 재사용.
+        List<PatternPiece> patternPieces = templatePatternParser.parse(
+                drop.getTemplate()
+        );
+        double requiredAreaMm2 = patternPieces.stream()
+                .mapToDouble(PatternPiece::areaMm2)
+                .sum();
 
         // 3. 전체 소재에서 필수조건을 통과한 것만 점수화하고,
         // 점수·등급·AI 신뢰도 순으로 정렬한 뒤 최대 3개만 선택.
@@ -56,7 +63,7 @@ public class MaterialCandidateService {
                                         material,
                                         requirement,
                                         requiredAreaMm2,
-                                        drop.getTemplate()
+                                        patternPieces
                                 )
                         )
                         .map(material ->
@@ -85,12 +92,10 @@ public class MaterialCandidateService {
 
         applyRecommendations(candidates, recommendationResult);
 
-        // 5. "조건을 수정해 다시 검색"하는 경우를 위해 과거 후보를 지우고
-        // 이번 계산 결과로 교체. AI 호출 실패 시에는 여기까지 오지 않아 기존 결과가 유지됨.
-        materialCandidateRepository.deleteAllByDrop_Id(dropId);
-
+        // 5. 외부 API 호출이 끝난 뒤 삭제+저장만 짧은 트랜잭션으로 처리한다.
+        // AI 호출 실패 시 writer가 실행되지 않아 기존 결과가 유지된다.
         List<MaterialCandidate> savedCandidates =
-                materialCandidateRepository.saveAll(candidates);
+                materialCandidateWriter.replace(dropId, candidates);
 
         return MaterialCandidateListResponse.from(
                 dropId,
@@ -116,7 +121,16 @@ public class MaterialCandidateService {
     private Drop findDrop(UUID dropId) {
         return dropRepository.findById(dropId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NoSuchElementException(
+                                "Drop을 찾을 수 없습니다: " + dropId
+                        )
+                );
+    }
+
+    private Drop findDropWithTemplate(UUID dropId) {
+        return dropRepository.findByIdWithTemplate(dropId)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
                                 "Drop을 찾을 수 없습니다: " + dropId
                         )
                 );
@@ -125,7 +139,7 @@ public class MaterialCandidateService {
     private DesignRequirement findDesignRequirement(UUID dropId) {
         return designRequirementRepository.findByDrop_Id(dropId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new NoSuchElementException(
                                 "디자인 조건을 찾을 수 없습니다: " + dropId
                         )
                 );

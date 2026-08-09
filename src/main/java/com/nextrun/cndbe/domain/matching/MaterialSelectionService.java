@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -136,7 +137,7 @@ public class MaterialSelectionService {
 
     private Drop findEditableDrop(UUID dropId) {
         Drop drop = dropRepository.findByIdForUpdate(dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         "Drop을 찾을 수 없습니다: " + dropId
                 ));
 
@@ -155,7 +156,7 @@ public class MaterialSelectionService {
     ) {
         return materialCandidateRepository
                 .findByIdAndDrop_Id(candidateId, dropId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new NoSuchElementException(
                         role + " 후보를 찾을 수 없습니다: " + candidateId
                 ));
     }

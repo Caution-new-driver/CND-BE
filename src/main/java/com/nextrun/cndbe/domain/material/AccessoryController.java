@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 // b11에서 선택 가능한 기존 부자재의 ID·종류·색상 목록을 제공함.
-@Tag(name = "Accessory")
+@Tag(
+        name = "Accessory",
+        description = "b11에서 선택 가능한 부자재 조회 API"
+)
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/accessories")

@@ -3,7 +3,6 @@ package com.nextrun.cndbe.domain.matching;
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 // b10 후보의 표시 순서를 정하기 위한 단순 점수 계산기.
 // AI가 순위를 임의로 바꾸지 못하도록 색상·패턴 일치 여부를 코드로 계산함.
@@ -19,22 +18,18 @@ public class MaterialMatchScorer {
         int criteriaCount = 0;
         int matchedCount = 0;
 
-        if (StringUtils.hasText(requirement.getColor())) {
+        if (requirement.getColor() != null) {
             criteriaCount++;
 
-            if (material.getColor() != null
-                    && material.getColor().name()
-                    .equalsIgnoreCase(requirement.getColor().trim())) {
+            if (material.getColor() == requirement.getColor()) {
                 matchedCount++;
             }
         }
 
-        if (StringUtils.hasText(requirement.getPattern())) {
+        if (requirement.getPattern() != null) {
             criteriaCount++;
 
-            if (material.getPattern() != null
-                    && material.getPattern().name()
-                    .equalsIgnoreCase(requirement.getPattern().trim())) {
+            if (material.getPattern() == requirement.getPattern()) {
                 matchedCount++;
             }
         }
