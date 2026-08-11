@@ -82,7 +82,7 @@
 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
 
-**변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`는 기존에 대응 enum이 없어서 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 새로 만듦 — `Accessory.color`(b4~b6, 이수현 담당)는 아직 이 enum을 안 쓰고 있으니 필요하면 같이 맞출지 논의 필요.
+**변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`와 `Accessory.color`는 모두 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 사용한다.
 
 **변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 
@@ -92,12 +92,64 @@
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
-| b9+b10 | POST | `/api/drops/{dropId}/material-candidates` | 필수조건 필터링 + AI 추천(최대 3개, 추천이유·주의사항 포함) 계산·저장 | 제안 |
-| b9+b10 | GET | `/api/drops/{dropId}/material-candidates` | 계산된 후보 조회 | 제안 |
-| b11 | POST | `/api/drops/{dropId}/material-selection` | 주 소재·포인트 소재 확정 저장 | 제안 |
-| b11 | POST | `/api/drops/{dropId}/accessory-selections` | 부자재 세트 확정 저장 | 제안 |
+| b9+b10 | POST | `/api/drops/{dropId}/material-candidates` | 필수조건 필터링 + AI 추천(최대 3개, 추천이유·주의사항 포함) 계산·저장 | ✅ 구현됨 |
+| b9+b10 | GET | `/api/drops/{dropId}/material-candidates` | 계산된 후보 조회 | ✅ 구현됨 |
+| b11 | GET | `/api/accessories` | 선택 가능한 부자재 목록 조회 | ✅ 구현됨 |
+| b11 | POST | `/api/drops/{dropId}/material-selection` | 주 소재·포인트 소재 확정 저장 | ✅ 구현됨 |
+| b11 | POST | `/api/drops/{dropId}/accessory-selections` | 부자재 세트 확정 저장 | ✅ 구현됨 |
 
-**열린 질문**: 후보 0건일 때(b19에 해당하던 케이스, v4에서도 로직상 필요) 응답을 어떻게 표현할지 — 빈 배열 + 상태 코드로 구분할지, 별도 필드로 표시할지.
+후보가 0건이면 정상 응답(200)의 `candidates`를 빈 배열로 반환한다. 프론트는 이를
+"조건을 수정해 다시 검색" 또는 "기획 종료" 분기로 처리한다.
+
+### `GET /api/accessories`
+
+응답 (200):
+```json
+[
+  {"id": "uuid", "accessoryType": "지퍼", "color": "GOLD"},
+  {"id": "uuid", "accessoryType": "링", "color": "GOLD"}
+]
+```
+
+서버 시작 시 디자이너가 선택할 수 있는 `지퍼`/`링` × `GOLD`/`SILVER`/`BLACK`
+조합 중 DB에 없는 것만 시드 데이터로 등록한다. AI가 선택하거나 확정하지 않는다.
+
+### `POST /api/drops/{dropId}/material-selection`
+
+요청 바디:
+```json
+{
+  "mainCandidateId": "uuid",
+  "pointCandidateId": "uuid 또는 null"
+}
+```
+
+`mainCandidateId`는 필수이고 `pointCandidateId`는 선택사항이다. 둘 다 b9 응답의
+`candidateId`를 사용한다. 선택한 소재는 `RESERVED`로 변경되며 같은 Drop에서
+재선택하면 더 이상 사용하지 않는 기존 소재는 `AVAILABLE`로 복구된다.
+
+응답 (200): 선택 ID, Drop ID, 주 소재 상세 정보와 선택적 포인트 소재 상세 정보를 반환한다.
+
+### `POST /api/drops/{dropId}/accessory-selections`
+
+요청 바디:
+```json
+{
+  "accessoryIds": ["지퍼 uuid", "링 uuid"]
+}
+```
+
+`GET /api/accessories`에서 받은 ID를 사용한다. 미니백 템플릿의 필수 종류인
+지퍼와 링이 각각 하나씩 포함돼야 하며, 같은 Drop에서 재호출하면 기존 부자재
+선택을 새 세트로 교체한다. 링의 필요 수량 2개는 템플릿 정보로 관리하므로 같은
+부자재 ID를 두 번 보내지 않는다. 한 세트의 지퍼와 링은 같은 색상이어야 하고,
+디자인 조건의 `accessoryColor`가 지정됐다면 해당 색상과 일치해야 한다.
+
+응답 (200): Drop ID와 저장된 부자재 선택 ID·부자재 ID·종류·색상을 반환한다.
+
+소재 후보를 다시 계산하는 `POST /material-candidates`가 성공하면 기존 소재 선택은
+삭제되고 해당 Drop이 예약했던 소재는 `AVAILABLE`로 자동 복구된다. 필터링이나
+OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그대로 보존된다.
 
 ---
 
@@ -105,9 +157,26 @@
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
-| b12 | POST | `/api/drops/{dropId}/production-scenarios` | 소재 기준 수량·활용률·러기지 태그 수량 계산 → 시나리오 2건(단독/추가) 생성 | 제안 |
-| b12 | GET | `/api/drops/{dropId}/production-scenarios` | 계산된 시나리오 조회 | 제안 |
-| b12 | POST | `/api/drops/{dropId}/production-scenarios/{scenarioId}/select` | 최종 제작안 선택 (`Drop.selectedScenarioId` 갱신) | 제안 |
+| b12 | POST | `/api/drops/{dropId}/production-scenarios` | 소재 기준 수량·활용률·러기지 태그 수량 계산 → 시나리오 2건(단독/추가) 생성 | ✅ 구현됨 |
+| b12 | GET | `/api/drops/{dropId}/production-scenarios` | 계산된 시나리오 조회 | ✅ 구현됨 |
+| b12 | POST | `/api/drops/{dropId}/production-scenarios/{scenarioId}/select` | 최종 제작안 선택 (`Drop.selectedScenarioId` 갱신) | ✅ 구현됨 |
+
+### b12 계산 규칙
+
+- 템플릿과 소재 치수는 모두 `mm` 단위로 계산한다.
+- 직사각형 패턴을 큰 조각부터 2차원으로 배치하며 90도 회전을 허용한다.
+- MVP에서는 모든 배치 조합을 완전탐색하지 않고, 실제 배치 성공이 확인된 보수적 수량을 반환한다.
+  따라서 결과는 안전하게 제작 가능한 수량이지만 수학적 최댓값을 항상 보장하지는 않는다.
+- 소재 여러 장은 서로 붙이지 않고 한 장씩 계산한 뒤 수량을 합산한다.
+- 포인트 소재가 없으면 모든 미니백 패턴을 주 소재에 배치한다.
+- 포인트 소재가 있으면 앞판·뒷판은 주 소재, 옆판/바닥은 포인트 소재에 배치한다.
+- 미니백 최종 수량은 주 소재와 포인트 소재가 각각 지원하는 수량 중 작은 값이다.
+- 러기지 태그 추가안은 미니백 배치 후 주 소재와 포인트 소재 양쪽의 남은 영역을 사용한다.
+- 같은 Drop으로 POST를 재호출하면 기존 결과와 선택 상태를 초기화하고 새 결과로 교체한다.
+- 계산 결과와 소재별 남은 사각형 영역은 DB에 저장하며 GET에서는 재계산하지 않는다.
+
+응답에는 `selectedScenarioId`와 두 개의 `scenarios`가 포함된다. 각 시나리오는
+제품별 수량·넘버링, 전체 활용률·사용/잔여 면적, 소재별 지원 수량과 잔여 사각형 목록을 반환한다.
 
 ---
 

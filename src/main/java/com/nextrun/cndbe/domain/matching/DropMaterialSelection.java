@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,13 @@ import org.hibernate.annotations.UuidGenerator;
 // 후보(MaterialCandidate) 중 담당자가 실제로 확정한 것만 담음.
 // pointMaterial은 선택사항이라 null일 수 있음.
 @Entity
-@Table(name = "drop_material_selection")
+@Table(
+        name = "drop_material_selection",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_drop_material_selection_drop",
+                columnNames = "drop_id"
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,11 +42,11 @@ public class DropMaterialSelection extends BaseEntity {
 	private UUID id;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "drop_id")
+	@JoinColumn(name = "drop_id", nullable = false)
 	private Drop drop;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "main_material_id")
+	@JoinColumn(name = "main_material_id", nullable = false)
 	private Material mainMaterial;
 
 	@ManyToOne(fetch = FetchType.LAZY)

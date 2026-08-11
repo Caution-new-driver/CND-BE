@@ -5,7 +5,8 @@ public record PatternPiece(
         String pieceName,
         double widthMm,
         double heightMm,
-        int quantity
+        int quantity,
+        PatternPieceRole role
 ) {
     public double areaMm2() {
         return widthMm * heightMm * quantity;

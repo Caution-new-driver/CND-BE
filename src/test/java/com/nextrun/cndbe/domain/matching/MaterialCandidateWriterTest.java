@@ -2,6 +2,7 @@ package com.nextrun.cndbe.domain.matching;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -19,6 +20,9 @@ class MaterialCandidateWriterTest {
     @Mock
     private MaterialCandidateRepository materialCandidateRepository;
 
+    @Mock
+    private MaterialSelectionService materialSelectionService;
+
     @Test
     void 기존_후보를_삭제한_뒤_새_후보를_저장한다() {
         UUID dropId = UUID.randomUUID();
@@ -28,14 +32,24 @@ class MaterialCandidateWriterTest {
         when(materialCandidateRepository.saveAll(candidates))
                 .thenReturn(candidates);
         MaterialCandidateWriter writer = new MaterialCandidateWriter(
-                materialCandidateRepository
+                materialCandidateRepository,
+                materialSelectionService
         );
 
-        List<MaterialCandidate> saved = writer.replace(dropId, candidates);
+        List<MaterialCandidate> saved = writer.replaceAfterResearch(
+                dropId,
+                candidates
+        );
 
-        InOrder order = inOrder(materialCandidateRepository);
+        InOrder order = inOrder(
+                materialSelectionService,
+                materialCandidateRepository
+        );
+        order.verify(materialSelectionService)
+                .releaseSelectionForResearch(dropId);
         order.verify(materialCandidateRepository).deleteAllByDrop_Id(dropId);
         order.verify(materialCandidateRepository).saveAll(candidates);
+        verify(materialSelectionService).releaseSelectionForResearch(dropId);
         assertSame(candidates, saved);
     }
 }

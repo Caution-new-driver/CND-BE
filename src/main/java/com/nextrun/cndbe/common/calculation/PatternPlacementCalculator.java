@@ -5,7 +5,8 @@ import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
-// 직사각형 패턴을 큰 조각부터 배치하는 단순 2차원 재단 계산기.
+// 직사각형 패턴을 큰 조각부터 배치하는 MVP용 2차원 재단 계산기.
+// 반환 수량은 실제 배치 가능한 보수적 값이며, 모든 배치 조합을 완전탐색한 수학적 최댓값은 아니다.
 // 각 소재 장은 물리적으로 분리되어 있으므로 서로 붙이지 않으며, 패턴은 90도 회전을 허용한다.
 @Component
 public class PatternPlacementCalculator {
@@ -27,7 +28,7 @@ public class PatternPlacementCalculator {
                 sheetWidthMm * sheetHeightMm / productArea
         );
 
-        // 면적으로 가능한 최대치부터 내려오며 실제 2차원 배치가 되는 첫 값을 찾는다.
+        // 면적 상한부터 내려오며 현재 휴리스틱으로 실제 배치가 확인되는 첫 값을 찾는다.
         for (int count = areaUpperBound; count >= 1; count--) {
             if (tryPlace(
                     List.of(new RemainingRegion(sheetWidthMm, sheetHeightMm)),

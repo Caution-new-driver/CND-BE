@@ -19,9 +19,9 @@ class TemplatePatternParserTest {
         List<PatternPiece> pieces = parser.parse(template(
                 """
                 [
-                  {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1},
-                  {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1},
-                  {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1}
+                  {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                  {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                  {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1,"role":"POINT"}
                 ]
                 """
         ));
@@ -30,6 +30,7 @@ class TemplatePatternParserTest {
                 84_000,
                 pieces.stream().mapToDouble(PatternPiece::areaMm2).sum()
         );
+        assertEquals(PatternPieceRole.POINT, pieces.getLast().role());
     }
 
     @Test
@@ -37,7 +38,7 @@ class TemplatePatternParserTest {
         List<PatternPiece> pieces = parser.parse(template(
                 """
                 [
-                  {"pieceName":"앞판","widthCm":20,"heightCm":15,"quantity":1}
+                  {"pieceName":"앞판","widthCm":20,"heightCm":15,"quantity":1,"role":"MAIN"}
                 ]
                 """
         ));
@@ -51,7 +52,23 @@ class TemplatePatternParserTest {
         Template invalid = template(
                 """
                 [
-                  {"pieceName":"앞판","widthMm":0,"heightMm":150,"quantity":0}
+                  {"pieceName":"앞판","widthMm":0,"heightMm":150,"quantity":0,"role":"MAIN"}
+                ]
+                """
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> parser.parse(invalid)
+        );
+    }
+
+    @Test
+    void 소재_역할이_없으면_예외가_발생한다() {
+        Template invalid = template(
+                """
+                [
+                  {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1}
                 ]
                 """
         );

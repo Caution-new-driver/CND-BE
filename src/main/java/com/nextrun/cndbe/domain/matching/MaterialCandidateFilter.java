@@ -6,6 +6,8 @@ import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialStatus;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,14 +19,30 @@ public class MaterialCandidateFilter {
 
     private final PatternPlacementCalculator patternPlacementCalculator;
 
-    // 아래 조건은 AND 관계라서 하나라도 실패하면 추천 후보에서 제외됨.
     public boolean isEligible(
             Material material,
             DesignRequirement requirement,
             double requiredAreaMm2,
             List<PatternPiece> patternPieces
     ) {
-        return hasRequiredData(material)
+        return isEligible(
+                material,
+                requirement,
+                requiredAreaMm2,
+                patternPieces,
+                Set.of()
+        );
+    }
+
+    // 아래 조건은 AND 관계라서 하나라도 실패하면 추천 후보에서 제외됨.
+    public boolean isEligible(
+            Material material,
+            DesignRequirement requirement,
+            double requiredAreaMm2,
+            List<PatternPiece> patternPieces,
+            Set<UUID> reusableMaterialIds
+    ) {
+        return hasRequiredData(material, reusableMaterialIds)
                 && matchesMaterialType(material, requirement)
                 && meetsMinimumGrade(material, requirement)
                 && hasEnoughArea(material, requiredAreaMm2)
@@ -33,8 +51,15 @@ public class MaterialCandidateFilter {
 
     // AVAILABLE 재고이면서 AI 태깅(color/pattern)과 제작 계산용 값이
     // 모두 채워져 있어야 함. null이나 0 이하 치수·수량은 잘못된 데이터로 봄.
-    private boolean hasRequiredData(Material material) {
-        return material.getStatus() == MaterialStatus.AVAILABLE
+    private boolean hasRequiredData(
+            Material material,
+            Set<UUID> reusableMaterialIds
+    ) {
+        boolean selectableStatus =
+                material.getStatus() == MaterialStatus.AVAILABLE
+                        || (material.getStatus() == MaterialStatus.RESERVED
+                        && reusableMaterialIds.contains(material.getId()));
+        return selectableStatus
                 && material.getMaterialType() != null
                 && material.getGrade() != null
                 && material.getColor() != null

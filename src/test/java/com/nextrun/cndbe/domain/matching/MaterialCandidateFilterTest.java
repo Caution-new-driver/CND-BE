@@ -15,6 +15,8 @@ import com.nextrun.cndbe.domain.material.MaterialStatus;
 import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -78,6 +80,22 @@ class MaterialCandidateFilterTest {
         );
 
         assertFalse(result);
+    }
+
+    @Test
+    void 이_Drop이_이미_예약한_소재는_재검색_후보로_허용한다() {
+        Material material = eligibleMaterial();
+        material.setStatus(MaterialStatus.RESERVED);
+
+        boolean result = filter.isEligible(
+                material,
+                requirement(MaterialType.COATED_CANVAS, MaterialGrade.A),
+                MINI_BAG_AREA_MM2,
+                miniBagPatternPieces,
+                Set.of(material.getId())
+        );
+
+        assertTrue(result);
     }
 
     @Test
@@ -158,6 +176,7 @@ class MaterialCandidateFilterTest {
 
     private Material eligibleMaterial() {
         return Material.builder()
+                .id(UUID.randomUUID())
                 .materialType(MaterialType.COATED_CANVAS)
                 .color(MaterialColor.BEIGE)
                 .pattern(MaterialPattern.STRIPE)
@@ -184,9 +203,9 @@ class MaterialCandidateFilterTest {
                 .patternPieces(
                         """
                         [
-                          {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1},
-                          {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1},
-                          {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1}
+                          {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1,"role":"POINT"}
                         ]
                         """
                 )

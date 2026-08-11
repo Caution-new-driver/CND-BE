@@ -12,12 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class MaterialCandidateWriter {
 
     private final MaterialCandidateRepository materialCandidateRepository;
+    private final MaterialSelectionService materialSelectionService;
 
     @Transactional
-    public List<MaterialCandidate> replace(
+    public List<MaterialCandidate> replaceAfterResearch(
             UUID dropId,
             List<MaterialCandidate> candidates
     ) {
+        // AI 추천까지 성공한 뒤에만 기존 선택·시나리오와 후보를 한 트랜잭션에서 교체한다.
+        materialSelectionService.releaseSelectionForResearch(dropId);
         materialCandidateRepository.deleteAllByDrop_Id(dropId);
         return materialCandidateRepository.saveAll(candidates);
     }

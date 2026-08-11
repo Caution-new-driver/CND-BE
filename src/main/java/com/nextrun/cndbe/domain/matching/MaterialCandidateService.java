@@ -13,6 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // b9+b10의 핵심 흐름을 담당함.
-// 필수조건 필터링 -> 점수·순위 계산 -> AI 설명 생성 -> 결과 저장을 한 번에 처리함.
+// 필수조건 필터링 -> 점수·순위 계산 -> AI 설명 생성 -> 성공 시 결과 교체 순서로 처리함.
 @Service
 @RequiredArgsConstructor
 public class MaterialCandidateService {
@@ -35,11 +36,17 @@ public class MaterialCandidateService {
     private final MaterialCandidateFilter materialCandidateFilter;
     private final MaterialMatchScorer materialMatchScorer;
     private final MaterialRecommendationClient materialRecommendationClient;
+    private final MaterialSelectionService materialSelectionService;
 
     public MaterialCandidateListResponse calculateCandidates(UUID dropId) {
         // 1. 짧은 DB 조회가 끝난 뒤에도 템플릿을 읽을 수 있도록 함께 조회한다.
         Drop drop = findDropWithTemplate(dropId);
         DesignRequirement requirement = findDesignRequirement(dropId);
+
+        // AI 호출이 실패해도 기존 선택을 보존하기 위해 예약은 아직 해제하지 않는다.
+        // 대신 이 Drop이 이미 선택한 RESERVED 소재 ID만 필터에서 재사용 가능하게 처리한다.
+        Set<UUID> reusableMaterialIds =
+                materialSelectionService.findSelectedMaterialIds(dropId);
 
         // 2. 템플릿 JSON은 한 번만 파싱한 뒤 면적 계산과 모든 소재 필터에서 재사용.
         List<PatternPiece> patternPieces = templatePatternParser.parse(
@@ -58,7 +65,8 @@ public class MaterialCandidateService {
                                         material,
                                         requirement,
                                         requiredAreaMm2,
-                                        patternPieces
+                                        patternPieces,
+                                        reusableMaterialIds
                                 )
                         )
                         .map(material ->
@@ -90,7 +98,10 @@ public class MaterialCandidateService {
         // 5. 외부 API 호출이 끝난 뒤 삭제+저장만 짧은 트랜잭션으로 처리한다.
         // AI 호출 실패 시 writer가 실행되지 않아 기존 결과가 유지된다.
         List<MaterialCandidate> savedCandidates =
-                materialCandidateWriter.replace(dropId, candidates);
+                materialCandidateWriter.replaceAfterResearch(
+                        dropId,
+                        candidates
+                );
 
         return MaterialCandidateListResponse.from(
                 dropId,

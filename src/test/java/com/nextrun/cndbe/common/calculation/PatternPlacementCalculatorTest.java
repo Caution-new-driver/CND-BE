@@ -20,7 +20,7 @@ class PatternPlacementCalculatorTest {
         int capacity = calculator.calculateCapacityPerSheet(
                 150,
                 100,
-                List.of(new PatternPiece("회전 패턴", 100, 150, 1))
+                List.of(new PatternPiece("회전 패턴", 100, 150, 1, PatternPieceRole.MAIN))
         );
 
         assertEquals(1, capacity);
@@ -32,7 +32,7 @@ class PatternPlacementCalculatorTest {
                 100,
                 100,
                 2,
-                List.of(new PatternPiece("패턴", 100, 60, 1)),
+                List.of(new PatternPiece("패턴", 100, 60, 1, PatternPieceRole.MAIN)),
                 2
         );
 
@@ -51,7 +51,7 @@ class PatternPlacementCalculatorTest {
         PatternPlacementCalculator.TagPlacementResult result =
                 calculator.fillWithTags(
                         List.of(new RemainingRegion(120, 100)),
-                        new PatternPiece("태그", 100, 60, 1)
+                        new PatternPiece("태그", 100, 60, 1, PatternPieceRole.MAIN)
                 );
 
         assertEquals(2, result.quantity());
@@ -70,9 +70,9 @@ class PatternPlacementCalculatorTest {
                 400,
                 300,
                 List.of(
-                        new PatternPiece("앞판", 200, 150, 1),
-                        new PatternPiece("뒷판", 200, 150, 1),
-                        new PatternPiece("옆판/바닥", 400, 60, 1)
+                        new PatternPiece("앞판", 200, 150, 1, PatternPieceRole.MAIN),
+                        new PatternPiece("뒷판", 200, 150, 1, PatternPieceRole.MAIN),
+                        new PatternPiece("옆판/바닥", 400, 60, 1, PatternPieceRole.POINT)
                 )
         );
 
