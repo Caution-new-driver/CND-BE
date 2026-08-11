@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.production;
 
 import com.nextrun.cndbe.common.calculation.PatternPiece;
+import com.nextrun.cndbe.common.calculation.PatternPieceRole;
 import com.nextrun.cndbe.common.calculation.PatternPlacementCalculator;
 import com.nextrun.cndbe.common.calculation.RemainingRegion;
 import com.nextrun.cndbe.common.calculation.SheetPlacementResult;
@@ -10,7 +11,6 @@ import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.Template;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 // b12의 수치 계산 담당. AI를 사용하지 않고 템플릿 치수와 선택 소재 크기로 항상 같은 결과를 만든다.
@@ -263,13 +263,7 @@ public class ProductionScenarioCalculator {
     }
 
     private boolean isPointPiece(PatternPiece piece) {
-        String name = piece.pieceName() == null
-                ? ""
-                : piece.pieceName().toLowerCase(Locale.ROOT);
-        return name.contains("옆판")
-                || name.contains("바닥")
-                || name.contains("side")
-                || name.contains("bottom");
+        return piece.role() == PatternPieceRole.POINT;
     }
 
     private void validateMaterial(Material material, String role) {

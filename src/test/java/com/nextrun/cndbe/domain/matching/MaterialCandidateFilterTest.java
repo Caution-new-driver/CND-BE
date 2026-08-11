@@ -203,9 +203,9 @@ class MaterialCandidateFilterTest {
                 .patternPieces(
                         """
                         [
-                          {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1},
-                          {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1},
-                          {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1}
+                          {"pieceName":"앞판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"뒷판","widthMm":200,"heightMm":150,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"옆판/바닥","widthMm":400,"heightMm":60,"quantity":1,"role":"POINT"}
                         ]
                         """
                 )

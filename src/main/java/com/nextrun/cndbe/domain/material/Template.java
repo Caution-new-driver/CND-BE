@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
-// 미니백/러기지 태그 고정 패턴. 사용자가 만드는 데이터가 아니라 서비스 시작 전
-// 시드 데이터로 한 번만 들어가는 상수에 가까움 (b1 나머지 작업: 시드 데이터 삽입).
+// 미니백/러기지 태그 고정 패턴. 사용자가 만드는 데이터가 아니라 서비스 시작 시
+// TemplateSeeder가 최신 고정값으로 동기화하는 상수에 가까움.
 @Entity
 @Table(name = "template")
 @Getter

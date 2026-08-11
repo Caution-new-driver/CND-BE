@@ -102,9 +102,9 @@ class ProductionScenarioCalculatorTest {
                 .name("미니백")
                 .patternPieces("""
                         [
-                          {"pieceName":"앞판","widthMm":100,"heightMm":100,"quantity":1},
-                          {"pieceName":"뒷판","widthMm":100,"heightMm":100,"quantity":1},
-                          {"pieceName":"옆판/바닥","widthMm":100,"heightMm":50,"quantity":1}
+                          {"pieceName":"앞판","widthMm":100,"heightMm":100,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"뒷판","widthMm":100,"heightMm":100,"quantity":1,"role":"MAIN"},
+                          {"pieceName":"측면 패널","widthMm":100,"heightMm":50,"quantity":1,"role":"POINT"}
                         ]
                         """)
                 .build();
@@ -116,7 +116,7 @@ class ProductionScenarioCalculatorTest {
                 .name("러기지 태그")
                 .patternPieces("""
                         [
-                          {"pieceName":"태그 몸체","widthMm":50,"heightMm":50,"quantity":1}
+                          {"pieceName":"태그 몸체","widthMm":50,"heightMm":50,"quantity":1,"role":"MAIN"}
                         ]
                         """)
                 .build();

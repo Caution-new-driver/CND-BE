@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.common.calculation.PatternPiece;
+import com.nextrun.cndbe.common.calculation.PatternPieceRole;
 import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.Drop;
@@ -255,7 +256,8 @@ class MaterialCandidateServiceTest {
                                 "미니백",
                                 MINI_BAG_AREA_MM2,
                                 1,
-                                1
+                                1,
+                                PatternPieceRole.MAIN
                         )
                 ));
     }

@@ -56,13 +56,14 @@ public class TemplatePatternParser {
         int quantity = raw.quantity() == null ? 0 : raw.quantity();
         if (raw.pieceName() == null
                 || raw.pieceName().isBlank()
+                || raw.role() == null
                 || !Double.isFinite(widthMm)
                 || !Double.isFinite(heightMm)
                 || widthMm <= 0
                 || heightMm <= 0
                 || quantity <= 0) {
             throw new IllegalStateException(
-                    "템플릿 패턴 조각의 치수 또는 수량이 올바르지 않습니다: "
+                    "템플릿 패턴 조각의 역할, 치수 또는 수량이 올바르지 않습니다: "
                             + raw.pieceName()
             );
         }
@@ -70,7 +71,8 @@ public class TemplatePatternParser {
                 raw.pieceName(),
                 widthMm,
                 heightMm,
-                quantity
+                quantity,
+                raw.role()
         );
     }
 
@@ -90,7 +92,8 @@ public class TemplatePatternParser {
             Double heightMm,
             Double widthCm,
             Double heightCm,
-            Integer quantity
+            Integer quantity,
+            PatternPieceRole role
     ) {
     }
 }
