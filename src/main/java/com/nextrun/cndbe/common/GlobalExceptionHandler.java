@@ -63,13 +63,13 @@ public class GlobalExceptionHandler {
 		));
 	}
 
-	// 업로드 파일/요청 용량이 spring.servlet.multipart 제한을 초과한 경우
+	// 업로드 파일/요청 용량이 spring.servlet.multipart 제한(파일당·요청 전체)을 초과한 경우
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<Map<String, String>> handleMaxUploadSizeExceeded(
 			MaxUploadSizeExceededException e) {
-		return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of(
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(Map.of(
 				"message",
-				"업로드 파일 용량이 허용된 최대 크기를 초과했습니다."
+				"업로드 파일 또는 요청 전체 용량이 허용된 최대 크기를 초과했습니다."
 		));
 	}
 }
