@@ -2,55 +2,19 @@ package com.nextrun.cndbe.domain.drop;
 
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextRequest;
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextResponse;
-import com.nextrun.cndbe.domain.matching.DropMaterialSelection;
-import com.nextrun.cndbe.domain.matching.DropMaterialSelectionRepository;
-import com.nextrun.cndbe.domain.production.ProductionScenario;
-import com.nextrun.cndbe.domain.production.ProductionScenarioItem;
-import com.nextrun.cndbe.domain.production.ProductionScenarioItemRepository;
-import com.nextrun.cndbe.domain.production.ProductionScenarioRepository;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// b14: 확정된 Drop을 기준으로 AI 소개문 초안을 생성하고, 담당자 수정본을 저장하는 흐름을 담당함.
+// b14: AI 초안은 b13 확정(DropConfirmationService) 흐름에서 함께 생성됨.
+// 이 서비스는 확정 후 담당자가 초안을 직접 고친 최종본을 저장하는 것만 담당함.
 @Service
 @RequiredArgsConstructor
 public class DropIntroTextService {
 
     private final DropRepository dropRepository;
-    private final DropMaterialSelectionRepository materialSelectionRepository;
-    private final ProductionScenarioRepository scenarioRepository;
-    private final ProductionScenarioItemRepository scenarioItemRepository;
-    private final DropIntroTextClient introTextClient;
-
-    @Transactional
-    public DropIntroTextResponse generate(UUID dropId) {
-        Drop drop = findConfirmedDrop(dropId);
-
-        DropMaterialSelection selection = materialSelectionRepository.findByDrop_Id(dropId)
-                .orElseThrow(() -> new IllegalStateException("확정된 소재 조합을 찾을 수 없습니다."));
-        ProductionScenario scenario = scenarioRepository
-                .findByIdAndDrop_Id(drop.getSelectedScenarioId(), dropId)
-                .orElseThrow(() -> new IllegalStateException("확정된 제작안을 찾을 수 없습니다."));
-        List<ProductionScenarioItem> items =
-                scenarioItemRepository.findAllByScenario_IdOrderByProductTypeAsc(scenario.getId());
-
-        String introText = introTextClient.generate(
-                drop,
-                selection.getMainMaterial(),
-                selection.getPointMaterial(),
-                scenario.getScenarioType(),
-                items
-        );
-
-        drop.setIntroText(introText);
-        dropRepository.save(drop);
-
-        return new DropIntroTextResponse(drop.getId(), introText);
-    }
 
     @Transactional
     public DropIntroTextResponse update(UUID dropId, DropIntroTextRequest request) {
