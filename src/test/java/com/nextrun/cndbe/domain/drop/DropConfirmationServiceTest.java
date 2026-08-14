@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.nextrun.cndbe.domain.drop.dto.DropConfirmRequest;
 import com.nextrun.cndbe.domain.drop.dto.DropConfirmResponse;
+import com.nextrun.cndbe.domain.matching.DropAccessorySelection;
+import com.nextrun.cndbe.domain.matching.DropAccessorySelectionRepository;
 import com.nextrun.cndbe.domain.matching.DropMaterialSelection;
 import com.nextrun.cndbe.domain.matching.DropMaterialSelectionRepository;
 import com.nextrun.cndbe.domain.material.Material;
@@ -39,6 +41,9 @@ class DropConfirmationServiceTest {
 
     @Mock
     private DropMaterialSelectionRepository materialSelectionRepository;
+
+    @Mock
+    private DropAccessorySelectionRepository accessorySelectionRepository;
 
     @Mock
     private MaterialRepository materialRepository;
@@ -89,6 +94,8 @@ class DropConfirmationServiceTest {
 
         when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
         when(materialSelectionRepository.findByDrop_Id(dropId)).thenReturn(Optional.of(selection));
+        when(accessorySelectionRepository.findAllByDrop_Id(dropId))
+                .thenReturn(List.of(DropAccessorySelection.builder().drop(drop).build()));
         when(scenarioRepository.findByIdAndDrop_Id(scenarioId, dropId)).thenReturn(Optional.of(scenario));
         when(materialRepository.findAllByIdForUpdate(any())).thenReturn(List.of(main, point));
         when(scenarioItemRepository.findAllByScenario_IdOrderByProductTypeAsc(scenarioId)).thenReturn(items);
@@ -120,6 +127,8 @@ class DropConfirmationServiceTest {
 
         when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
         when(materialSelectionRepository.findByDrop_Id(dropId)).thenReturn(Optional.of(selection));
+        when(accessorySelectionRepository.findAllByDrop_Id(dropId))
+                .thenReturn(List.of(DropAccessorySelection.builder().drop(drop).build()));
         when(scenarioRepository.findByIdAndDrop_Id(scenarioId, dropId)).thenReturn(Optional.of(scenario));
         when(materialRepository.findAllByIdForUpdate(any())).thenReturn(List.of(main));
         when(scenarioItemRepository.findAllByScenario_IdOrderByProductTypeAsc(scenarioId))
@@ -152,6 +161,23 @@ class DropConfirmationServiceTest {
     void 소재_조합이_확정되지_않았으면_확정할_수_없다() {
         when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
         when(materialSelectionRepository.findByDrop_Id(dropId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.confirm(dropId, new DropConfirmRequest("이름", null))
+        );
+    }
+
+    @Test
+    void 부자재_조합이_확정되지_않았으면_확정할_수_없다() {
+        DropMaterialSelection selection = DropMaterialSelection.builder()
+                .drop(drop)
+                .mainMaterial(material(MaterialStatus.RESERVED))
+                .build();
+
+        when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
+        when(materialSelectionRepository.findByDrop_Id(dropId)).thenReturn(Optional.of(selection));
+        when(accessorySelectionRepository.findAllByDrop_Id(dropId)).thenReturn(List.of());
 
         assertThrows(
                 IllegalStateException.class,

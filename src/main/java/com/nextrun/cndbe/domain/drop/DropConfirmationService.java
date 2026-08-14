@@ -2,6 +2,8 @@ package com.nextrun.cndbe.domain.drop;
 
 import com.nextrun.cndbe.domain.drop.dto.DropConfirmRequest;
 import com.nextrun.cndbe.domain.drop.dto.DropConfirmResponse;
+import com.nextrun.cndbe.domain.matching.DropAccessorySelection;
+import com.nextrun.cndbe.domain.matching.DropAccessorySelectionRepository;
 import com.nextrun.cndbe.domain.matching.DropMaterialSelection;
 import com.nextrun.cndbe.domain.matching.DropMaterialSelectionRepository;
 import com.nextrun.cndbe.domain.material.Material;
@@ -24,7 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // b13: Drop을 CONFIRMED로 전환하는 흐름을 담당함.
-// 제작안 선택(b12) -> 소재 확정(b11)이 끝났는지 확인 -> Drop 확정 -> 소재 DEPLETED 전환 -> AI 소개문 초안(b14) 생성까지 한 번에 처리.
+// 제작안 선택(b12) -> 소재·부자재 확정(b11)이 끝났는지 확인 -> Drop 확정 -> 소재 DEPLETED 전환 -> AI 소개문 초안(b14) 생성까지 한 번에 처리.
 // f6·f7이 화면상 버튼 하나("Drop 확정하기")로 묶여 있어서, 소개문 생성을 별도 단계로 쪼개지 않고 확정 흐름에 흡수함.
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class DropConfirmationService {
 
     private final DropRepository dropRepository;
     private final DropMaterialSelectionRepository materialSelectionRepository;
+    private final DropAccessorySelectionRepository accessorySelectionRepository;
     private final MaterialRepository materialRepository;
     private final ProductionScenarioRepository scenarioRepository;
     private final ProductionScenarioItemRepository scenarioItemRepository;
@@ -52,6 +55,11 @@ public class DropConfirmationService {
         }
         DropMaterialSelection selection = materialSelectionRepository.findByDrop_Id(dropId)
                 .orElseThrow(() -> new IllegalStateException("소재 조합을 먼저 확정해야 Drop을 확정할 수 있습니다."));
+        List<DropAccessorySelection> accessorySelections =
+                accessorySelectionRepository.findAllByDrop_Id(dropId);
+        if (accessorySelections.isEmpty()) {
+            throw new IllegalStateException("부자재 조합을 먼저 확정해야 Drop을 확정할 수 있습니다.");
+        }
         ProductionScenario scenario = scenarioRepository
                 .findByIdAndDrop_Id(drop.getSelectedScenarioId(), dropId)
                 .orElseThrow(() -> new IllegalStateException("확정된 제작안을 찾을 수 없습니다."));

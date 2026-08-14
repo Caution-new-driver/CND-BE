@@ -186,9 +186,17 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
-| b13 | PATCH | `/api/drops/{dropId}/confirm` | 상태 전환(CONFIRMED) + 부가정보 저장(이름 직접입력, 예상 제작기간, 넘버링은 Stage4 값 기반 확정) | 제안 |
-| b14 | POST | `/api/drops/{dropId}/intro-text` | AI 소개문 초안 생성 | 제안 |
-| b14 | PATCH | `/api/drops/{dropId}/intro-text` | 담당자 수정본 저장 | 제안 |
+| b13 | PATCH | `/api/drops/{dropId}/confirm` | 상태 전환(CONFIRMED) + 부가정보 저장(이름 직접입력, 예상 제작기간, 넘버링은 Stage4 값 기반 확정) + AI 소개문 초안(b14) 생성까지 한 번에 처리 | ✅ 구현됨 |
+| b14 | PATCH | `/api/drops/{dropId}/intro-text` | 담당자가 초안을 직접 고친 최종본 저장 | ✅ 구현됨 |
+
+**변경 이력 (2026-08-14, 김재현)**: 초안 설계엔 `POST /api/drops/{dropId}/intro-text`(AI 초안 생성)가 `PATCH /confirm`과 별도 API로 있었으나, 와이어프레임(f6·f7)을 다시 보니 두 화면이 "Drop 확정하기" 버튼 하나로 묶인 한 화면이라 별도 생성 API를 없애고 `PATCH /confirm` 안에서 AI 소개문까지 함께 생성하도록 통합했다. 그래서 지금은 `PATCH /confirm` 하나가 상태 전환·부가정보 저장·소재 DEPLETED 전환·AI 소개문 생성을 다 처리하고, `PATCH /intro-text`는 그 결과를 담당자가 고쳐 저장하는 용도로만 남는다.
+
+`PATCH /confirm`은 아래 조건을 모두 만족해야 성공한다 (하나라도 없으면 `409 Conflict`):
+- 제작안(b12)이 선택돼 있어야 함 (`Drop.selectedScenarioId`)
+- 주 소재 확정(b11 `/material-selection`)이 저장돼 있어야 함
+- 부자재 확정(b11 `/accessory-selections`)이 저장돼 있어야 함
+
+응답의 `introText`는 AI 생성이 성공하면 채워지고, OpenAI 호출이 실패해도 확정 자체는 그대로 성공하며 이때 `introText`는 `null`로 내려온다. 이 경우 프론트는 `PATCH /intro-text`로 담당자가 직접 입력하도록 안내해야 한다. `PATCH /intro-text`는 Drop이 `CONFIRMED` 상태가 아니면 거부된다.
 
 ---
 
