@@ -1,6 +1,6 @@
 package com.nextrun.cndbe.domain.drop.dto;
 
-import com.nextrun.cndbe.domain.drop.Drop;
+import com.nextrun.cndbe.domain.drop.DropConfirmationCoreResult;
 import com.nextrun.cndbe.domain.production.dto.ProductionScenarioItemResponse;
 import java.util.List;
 import java.util.UUID;
@@ -23,18 +23,20 @@ public class DropConfirmResponse {
     // b14가 확정 흐름에 흡수되어 함께 생성됨. AI 생성이 실패했을 경우 null일 수 있음(담당자가 직접 채워야 함).
     private String introText;
 
+    // introText는 core가 아니라 별도 인자로 받는다 — AI 생성이 트랜잭션 밖에서
+    // 일어나고 core가 만들어진 시점엔 아직 결과를 모르기 때문(DropConfirmationService 참고).
     public static DropConfirmResponse of(
-            Drop drop,
-            List<ProductionScenarioItemResponse> items
+            DropConfirmationCoreResult core,
+            String introText
     ) {
         return DropConfirmResponse.builder()
-                .id(drop.getId())
-                .status(drop.getStatus().name())
-                .name(drop.getName())
-                .expectedProductionDays(drop.getExpectedProductionDays())
-                .selectedScenarioId(drop.getSelectedScenarioId())
-                .items(items)
-                .introText(drop.getIntroText())
+                .id(core.dropId())
+                .status(core.status())
+                .name(core.name())
+                .expectedProductionDays(core.expectedProductionDays())
+                .selectedScenarioId(core.selectedScenarioId())
+                .items(core.items())
+                .introText(introText)
                 .build();
     }
 }

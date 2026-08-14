@@ -1,13 +1,5 @@
 package com.nextrun.cndbe.domain.drop;
 
-import com.nextrun.cndbe.domain.material.Material;
-import com.nextrun.cndbe.domain.material.MaterialColor;
-import com.nextrun.cndbe.domain.material.MaterialGrade;
-import com.nextrun.cndbe.domain.material.MaterialPattern;
-import com.nextrun.cndbe.domain.material.MaterialType;
-import com.nextrun.cndbe.domain.production.ProductType;
-import com.nextrun.cndbe.domain.production.ProductionScenarioItem;
-import com.nextrun.cndbe.domain.production.ScenarioType;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +10,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 // b14: 확정된 Drop 정보(이름·소재·제작 수량)를 OpenAI에 전달해
 // 한국어 소개문 초안을 받아오는 외부 API 담당자.
+// b13 확정 트랜잭션이 끝난 뒤(락 없이) 호출되므로, JPA 엔티티가 아니라
+// DropConfirmationWriter가 트랜잭션 안에서 미리 꺼내둔 순수 값(DropIntroTextPromptData)만 받는다.
 @Component
 @RequiredArgsConstructor
 public class DropIntroTextClient {
@@ -28,46 +22,9 @@ public class DropIntroTextClient {
     private final RestClient openAiRestClient;
     private final JsonMapper jsonMapper;
 
-    public String generate(
-            Drop drop,
-            Material mainMaterial,
-            Material pointMaterial,
-            ScenarioType scenarioType,
-            List<ProductionScenarioItem> items
-    ) {
-        String prompt = buildPrompt(drop, mainMaterial, pointMaterial, scenarioType, items);
+    public String generate(DropIntroTextPromptData promptData) {
+        String prompt = jsonMapper.writeValueAsString(promptData);
         return requestIntroText(prompt);
-    }
-
-    private String buildPrompt(
-            Drop drop,
-            Material mainMaterial,
-            Material pointMaterial,
-            ScenarioType scenarioType,
-            List<ProductionScenarioItem> items
-    ) {
-        IntroTextPrompt prompt = new IntroTextPrompt(
-                drop.getName(),
-                drop.getTemplate().getName(),
-                scenarioType,
-                toMaterialPrompt(mainMaterial),
-                pointMaterial == null ? null : toMaterialPrompt(pointMaterial),
-                items.stream().map(this::toProductPrompt).toList()
-        );
-        return jsonMapper.writeValueAsString(prompt);
-    }
-
-    private MaterialPrompt toMaterialPrompt(Material material) {
-        return new MaterialPrompt(
-                material.getMaterialType(),
-                material.getColor(),
-                material.getPattern(),
-                material.getGrade()
-        );
-    }
-
-    private ProductPrompt toProductPrompt(ProductionScenarioItem item) {
-        return new ProductPrompt(item.getProductType(), item.getQuantity());
     }
 
     private String requestIntroText(String prompt) {
@@ -141,27 +98,6 @@ public class DropIntroTextClient {
             throw new IllegalStateException("OpenAI가 소개문을 반환하지 않았습니다.");
         }
         return response.choices().get(0).message().content();
-    }
-
-    private record IntroTextPrompt(
-            String dropName,
-            String templateName,
-            ScenarioType scenarioType,
-            MaterialPrompt mainMaterial,
-            MaterialPrompt pointMaterial,
-            List<ProductPrompt> products
-    ) {
-    }
-
-    private record MaterialPrompt(
-            MaterialType materialType,
-            MaterialColor color,
-            MaterialPattern pattern,
-            MaterialGrade grade
-    ) {
-    }
-
-    private record ProductPrompt(ProductType productType, int quantity) {
     }
 
     private record ChatCompletionResponse(List<Choice> choices) {
