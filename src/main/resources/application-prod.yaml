@@ -19,3 +19,6 @@ cloudinary:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  auth:
+    access-password: ${ACCESS_PASSWORD}
+    session-secret: ${SESSION_SECRET}

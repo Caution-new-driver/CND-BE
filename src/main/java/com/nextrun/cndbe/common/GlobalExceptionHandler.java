@@ -1,5 +1,6 @@
 package com.nextrun.cndbe.common;
 
+import com.nextrun.cndbe.common.auth.InvalidCredentialsException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,12 @@ public class GlobalExceptionHandler {
 				"message",
 				e.getName() + " 값의 형식이 올바르지 않습니다."
 		));
+	}
+
+	// 로그인 비밀번호 불일치
+	@ExceptionHandler(InvalidCredentialsException.class)
+	public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidCredentialsException e) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
