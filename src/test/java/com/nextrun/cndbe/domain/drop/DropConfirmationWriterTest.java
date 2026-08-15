@@ -115,6 +115,9 @@ class DropConfirmationWriterTest {
         assertEquals("미니백", result.introTextPromptData().templateName());
         assertEquals(ScenarioType.MAIN_ONLY, result.introTextPromptData().scenarioType());
         assertEquals(main.getMaterialType(), result.introTextPromptData().mainMaterial().materialType());
+
+        assertEquals(1, drop.getIntroTextGenerationCount());
+        assertEquals(1, result.introTextGenerationsUsed());
     }
 
     @Test
@@ -184,6 +187,52 @@ class DropConfirmationWriterTest {
         writer.saveIntroText(dropId, "생성된 소개문");
 
         assertEquals("생성된 소개문", drop.getIntroText());
+    }
+
+    @Test
+    void 재생성_예약이_성공하면_카운트를_1_늘리고_프롬프트데이터를_반환한다() {
+        drop.setStatus(DropStatus.CONFIRMED);
+        drop.setIntroTextGenerationCount(1);
+        Material main = material(MaterialStatus.DEPLETED);
+        DropMaterialSelection selection = DropMaterialSelection.builder()
+                .drop(drop)
+                .mainMaterial(main)
+                .build();
+
+        when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
+        when(materialSelectionRepository.findByDrop_Id(dropId)).thenReturn(Optional.of(selection));
+        when(scenarioRepository.findByIdAndDrop_Id(scenarioId, dropId)).thenReturn(Optional.of(scenario));
+        when(scenarioItemRepository.findAllByScenario_IdOrderByProductTypeAsc(scenarioId))
+                .thenReturn(List.of(scenarioItem(ProductType.MINI_BAG, 8)));
+
+        DropConfirmationWriter.IntroTextRegenerationReservation reservation =
+                writer.reserveRegenerationAttempt(dropId);
+
+        assertEquals(2, drop.getIntroTextGenerationCount());
+        assertEquals(2, reservation.usedCount());
+        assertEquals("미니백", reservation.promptData().templateName());
+    }
+
+    @Test
+    void DRAFT_상태의_Drop은_소개문을_재생성할_수_없다() {
+        when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> writer.reserveRegenerationAttempt(dropId)
+        );
+    }
+
+    @Test
+    void 재생성_가능_횟수를_모두_썼으면_예약할_수_없다() {
+        drop.setStatus(DropStatus.CONFIRMED);
+        drop.setIntroTextGenerationCount(DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT);
+        when(dropRepository.findByIdForUpdate(dropId)).thenReturn(Optional.of(drop));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> writer.reserveRegenerationAttempt(dropId)
+        );
     }
 
     private Material material(MaterialStatus status) {

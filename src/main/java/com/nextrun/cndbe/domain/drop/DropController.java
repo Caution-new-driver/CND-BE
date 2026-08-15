@@ -72,7 +72,9 @@ public class DropController {
 			summary = "Drop 확정",
 			description = "선택된 제작안(b12)과 소재 조합(b11)이 모두 끝난 Drop을 CONFIRMED로 전환하고, "
 					+ "이름·예상 제작기간을 저장하며, 확정된 소재를 DEPLETED로 전환합니다. "
-					+ "같은 흐름 안에서 AI 소개문 초안(b14)도 함께 생성해 반환합니다(실패해도 확정 자체는 성공)."
+					+ "같은 흐름 안에서 AI 소개문 초안(b14)도 함께 생성해 반환합니다(실패해도 확정 자체는 성공). "
+					+ "이 최초 생성도 Drop당 총 " + DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT
+					+ "회 한도에 포함됩니다."
 	)
 	@PatchMapping("/api/drops/{dropId}/confirm")
 	public DropConfirmResponse confirm(
@@ -81,11 +83,24 @@ public class DropController {
 		return dropConfirmationService.confirm(dropId, request);
 	}
 
-	// b14: AI 소개문 초안은 b13 확정 흐름에서 함께 생성됨 (f6·f7이 버튼 하나로 묶인 화면이라 별도 생성 API를 두지 않음).
-	// 담당자가 수정한 소개문 최종본 저장
+	// b14: 담당자가 확정된 소개문을 다시 AI로 생성 요청 (b13 최초 생성 포함 Drop당 총 6회까지)
+	@Operation(
+			summary = "소개문 AI 재생성",
+			description = "b13 확정 시 생성된 AI 소개문 초안이 마음에 들지 않을 때 다시 요청합니다. "
+					+ "Drop이 CONFIRMED 상태가 아니면 호출할 수 없고, "
+					+ "b13 최초 생성을 포함해 Drop당 총 " + DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT
+					+ "회까지만 호출 가능합니다(초과 시 409). 실패한 시도도 횟수에 포함됩니다."
+	)
+	@PostMapping("/api/drops/{dropId}/intro-text")
+	public DropIntroTextResponse regenerateIntroText(
+			@Parameter(description = "소개문을 재생성할 Drop ID") @PathVariable UUID dropId) {
+		return dropIntroTextService.regenerate(dropId);
+	}
+
+	// b14: 담당자가 수정한 소개문 최종본 저장 (AI 재호출 없음, 횟수 제한과 무관)
 	@Operation(
 			summary = "소개문 수정본 저장",
-			description = "b13 확정 시 생성된 AI 소개문 초안을 담당자가 직접 고친 최종본으로 덮어씁니다. "
+			description = "AI가 생성한 소개문을 담당자가 직접 고친 최종본으로 덮어씁니다. "
 					+ "Drop이 CONFIRMED 상태가 아니면 저장할 수 없습니다."
 	)
 	@PatchMapping("/api/drops/{dropId}/intro-text")

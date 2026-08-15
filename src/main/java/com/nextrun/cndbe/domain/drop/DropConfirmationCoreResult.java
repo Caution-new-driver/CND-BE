@@ -13,6 +13,7 @@ public record DropConfirmationCoreResult(
         Integer expectedProductionDays,
         UUID selectedScenarioId,
         List<ProductionScenarioItemResponse> items,
-        DropIntroTextPromptData introTextPromptData
+        DropIntroTextPromptData introTextPromptData,
+        int introTextGenerationsUsed
 ) {
 }

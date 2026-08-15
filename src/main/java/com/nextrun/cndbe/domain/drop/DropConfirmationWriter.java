@@ -31,6 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DropConfirmationWriter {
 
+    // b13 최초 생성 1회 + b14 재생성 최대 5회 = Drop당 총 6회.
+    // 인증이 없는 내부 도구라 누구나 반복 호출할 수 있어, AI 크레딧 소모를 막기 위한 상한.
+    public static final int MAX_INTRO_TEXT_GENERATION_COUNT = 6;
+
     private final DropRepository dropRepository;
     private final DropMaterialSelectionRepository materialSelectionRepository;
     private final DropAccessorySelectionRepository accessorySelectionRepository;
@@ -63,6 +67,8 @@ public class DropConfirmationWriter {
         drop.setName(request.name());
         drop.setExpectedProductionDays(request.expectedProductionDays());
         drop.setStatus(DropStatus.CONFIRMED);
+        // 확정 직후 AI 소개문을 정확히 1회 시도할 것이므로, 그 시도 몫을 여기서 미리 예약해둔다.
+        drop.setIntroTextGenerationCount(1);
 
         depleteSelectedMaterials(selection);
 
@@ -90,7 +96,8 @@ public class DropConfirmationWriter {
                 drop.getExpectedProductionDays(),
                 drop.getSelectedScenarioId(),
                 items,
-                promptData
+                promptData,
+                drop.getIntroTextGenerationCount()
         );
     }
 
@@ -101,6 +108,43 @@ public class DropConfirmationWriter {
                 .orElseThrow(() -> new NoSuchElementException("Drop을 찾을 수 없습니다: " + dropId));
         drop.setIntroText(introText);
         dropRepository.save(drop);
+    }
+
+    // b14 재생성: 실제 OpenAI 호출(트랜잭션 밖)보다 먼저 이 트랜잭션 안에서
+    // "시도 1회"를 확정해둔다 — 호출이 실패해도 크레딧은 이미 나간 뒤라 횟수에서 빼야 하기 때문.
+    // 같은 이유로 상한 체크와 증가를 같은 트랜잭션에서 원자적으로 처리해 동시 요청에도 6회를 넘지 않게 한다.
+    @Transactional
+    public IntroTextRegenerationReservation reserveRegenerationAttempt(UUID dropId) {
+        Drop drop = dropRepository.findByIdForUpdate(dropId)
+                .orElseThrow(() -> new NoSuchElementException("Drop을 찾을 수 없습니다: " + dropId));
+        if (drop.getStatus() != DropStatus.CONFIRMED) {
+            throw new IllegalStateException("Drop이 확정된 후에만 소개문을 재생성할 수 있습니다.");
+        }
+
+        int usedSoFar = drop.getIntroTextGenerationCount() == null
+                ? 0
+                : drop.getIntroTextGenerationCount();
+        if (usedSoFar >= MAX_INTRO_TEXT_GENERATION_COUNT) {
+            throw new IllegalStateException(
+                    "AI 소개문 생성 가능 횟수를 모두 사용했습니다. 직접 입력해주세요."
+            );
+        }
+        int usedAfterThisAttempt = usedSoFar + 1;
+        drop.setIntroTextGenerationCount(usedAfterThisAttempt);
+        dropRepository.save(drop);
+
+        DropMaterialSelection selection = materialSelectionRepository.findByDrop_Id(dropId)
+                .orElseThrow(() -> new IllegalStateException("확정된 소재 조합을 찾을 수 없습니다."));
+        ProductionScenario scenario = scenarioRepository
+                .findByIdAndDrop_Id(drop.getSelectedScenarioId(), dropId)
+                .orElseThrow(() -> new IllegalStateException("확정된 제작안을 찾을 수 없습니다."));
+        List<ProductionScenarioItem> scenarioItems = scenarioItemRepository
+                .findAllByScenario_IdOrderByProductTypeAsc(scenario.getId());
+
+        DropIntroTextPromptData promptData =
+                buildPromptData(drop, selection, scenario, scenarioItems);
+
+        return new IntroTextRegenerationReservation(promptData, usedAfterThisAttempt);
     }
 
     private void depleteSelectedMaterials(DropMaterialSelection selection) {
@@ -145,5 +189,11 @@ public class DropConfirmationWriter {
                 material.getPattern(),
                 material.getGrade()
         );
+    }
+
+    public record IntroTextRegenerationReservation(
+            DropIntroTextPromptData promptData,
+            int usedCount
+    ) {
     }
 }

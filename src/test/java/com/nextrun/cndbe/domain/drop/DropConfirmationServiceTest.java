@@ -61,7 +61,8 @@ class DropConfirmationServiceTest {
                 14,
                 UUID.randomUUID(),
                 List.of(),
-                promptData
+                promptData,
+                1
         );
     }
 
@@ -78,6 +79,10 @@ class DropConfirmationServiceTest {
 
         assertEquals("CONFIRMED", response.getStatus());
         assertEquals("업사이클링으로 태어난 미니백입니다.", response.getIntroText());
+        assertEquals(
+                DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT - 1,
+                response.getRegenerationsRemaining()
+        );
         verify(confirmationWriter).saveIntroText(dropId, "업사이클링으로 태어난 미니백입니다.");
     }
 
