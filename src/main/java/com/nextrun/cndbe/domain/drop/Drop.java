@@ -54,4 +54,9 @@ public class Drop extends BaseEntity {
 
 	@Column(columnDefinition = "TEXT")
 	private String introText;
+
+	// b13 최초 자동 생성 + b14 재생성을 합쳐 센 횟수. AI 크레딧 소모를 막기 위해
+	// DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT까지만 허용함.
+	// 기존 행엔 값이 없어 null일 수 있으므로 읽을 때 항상 0으로 취급해야 함.
+	private Integer introTextGenerationCount;
 }
