@@ -6,3 +6,7 @@ spring:
     name: cndbe
   profiles:
     active: local
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 20MB

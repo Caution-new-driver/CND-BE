@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -59,6 +60,16 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.badRequest().body(Map.of(
 				"message",
 				"요청 본문 형식이 올바르지 않습니다."
+		));
+	}
+
+	// 업로드 파일/요청 용량이 spring.servlet.multipart 제한(파일당·요청 전체)을 초과한 경우
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<Map<String, String>> handleMaxUploadSizeExceeded(
+			MaxUploadSizeExceededException e) {
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(Map.of(
+				"message",
+				"업로드 파일 또는 요청 전체 용량이 허용된 최대 크기를 초과했습니다."
 		));
 	}
 }
