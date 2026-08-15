@@ -52,7 +52,7 @@ Stage 0(~8/1: 셋업·DB·API명세) → Stage1·2 병렬(~8/4) → Stage3 합�
 - ✅ **완료·`dev` 병합·배포됨**: `b0,b1,b2`(초기세팅/DB스키마/외부클라이언트), `b4,b5,b6`(소재 등록·CRUD·AI 태깅, 이수현), `b7,b8`(Drop 생성·디자인조건저장, 김재현), `b9,b10,b11`(소재 후보 추천·주소재/포인트소재·부자재 확정, 박서준), `b12`(제작 가능성 계산·시나리오 2건, 박서준), `b13,b14`(Drop 확정·AI 소개문 생성/재생성, 김재현 — PR [#11](https://github.com/Caution-new-driver/CND-BE/pull/11), 2026-08-15 `dev` 병합), `f0,f2,f3`(FE)
 - **백엔드 담당분(`b0~b14`)은 이걸로 전부 완료** — 기능개발 종료 목표일(8/11)보다 늦었지만 통합/QA 기간(8/18까지) 안에 들어옴.
 - 🔲 **미착수(확인 필요)**: `f1,f4~f7`(가연우 — 백엔드 저장소라 실제 착수 여부는 이 문서 기준으로 확인 불가, FE 쪽에 직접 확인 필요)
-- `b3`(API 명세 합의)는 팀 회의로 못 박지 않고 `docs/api-draft.md` 초안 그대로 각자 개발 착수 → 진행하면서 수정하는 방침대로 진행됐고, 열린 질문 2개는 구현하면서 해소됨: `Material.status`는 `AVAILABLE→RESERVED→DEPLETED` 3단계로 확정(2026-07-31), 소재 후보 0건 응답은 정상 200 + `candidates` 빈 배열로 확정. 새로 남은 열린 질문은 `docs/api-draft.md` 참고 (`DELETE /api/materials/{id}` 상태 확인 없음, `design-requirement` 필수 필드 미정).
+- `b3`(API 명세 합의)는 팀 회의로 못 박지 않고 `docs/api-draft.md` 초안 그대로 각자 개발 착수 → 진행하면서 수정하는 방침대로 진행됐고, 열린 질문 2개는 구현하면서 해소됨: `Material.status`는 `AVAILABLE→RESERVED→DEPLETED` 3단계로 확정(2026-07-31), 소재 후보 0건 응답은 정상 200 + `candidates` 빈 배열로 확정. 새로 남은 열린 질문은 `docs/api-draft.md`의 각 Stage 섹션 안 "열린 질문" 항목 참고 (`DELETE /api/materials/{id}` 상태 확인 없음 — Stage 1, `design-requirement` 필수 필드 미정 — Stage 2).
 - **역할 분담 개수가 불균형함**: 김재현 10 / 가연우 5 / 박서준 4 / 이수현 3 (v5에서 이수현 담당이던 Stage 6 전체가 사라진 부작용). 백엔드 3인(김재현·이수현·박서준)은 이제 전부 여유가 생긴 상태 — FE(`f1,f4~f7`) 지원 여부는 팀 논의 필요.
 
 ## 배포 정보

@@ -1,8 +1,5 @@
-# next:R.U.N API 명세 초안 (b3 팀 논의용)
+# next:R.U.N. API 명세서
 
-> **이 문서의 상태: 초안입니다.** 팀 미팅에서 다 같이 맞춰본 뒤 확정하세요.
-> "✅ 구현됨"만 실제로 만들어서 테스트까지 끝낸 것이고, 나머지는 ERD·기능명세서 v5(`next_RUN_기능명세서_v5.md`, 고객 프리오더 기능 제외 반영) 기준으로 제가 제안한 형태입니다 — 실제 담당자가 다르게 만들고 싶으면 얼마든지 바뀔 수 있습니다.
->
 > **v4 → v5 변경**: 고객 프리오더 기능(Stage 6)을 완전히 제외하기로 결정하면서, Stage 6 섹션 전체와 Stage 5의 "발행" 관련 항목을 이 문서에서 제거했습니다.
 
 공통 규칙: 전부 내부 운영용 API라 `/api/**`로 통일 (고객 공개 엔드포인트가 없어서 `/api/public/**` 구분 자체가 불필요해짐).
@@ -28,11 +25,13 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 ### `POST /api/auth/login`
 
 요청 바디:
+
 ```json
 { "password": "..." }
 ```
 
 응답 (200):
+
 ```json
 { "token": "1788008153.BpuZtHwGhtjaf7oI0OB4nfGwxNIHODkyziKfe1qK7P4" }
 ```
@@ -72,12 +71,12 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 
 | 필드 | 타입 | 필수 | 비고 |
 | --- | --- | --- | --- |
-| materialCode | string | 아니오 | |
+| materialCode | string | 아니오 |  |
 | materialType | enum(string) | 아니오 | `LEATHER`, `COATED_CANVAS`, `FABRIC`, `SYNTHETIC`, `OTHER` |
 | grade | enum(string) | 아니오 | `A`, `B`, `C` — 담당자 직접 입력 (AI 태깅 대상 아님) |
-| widthMm / heightMm / thicknessMm | number | 아니오 | |
-| handFeel / flexibility | string | 아니오 | |
-| quantity | integer | 아니오 | |
+| widthMm / heightMm / thicknessMm | number | 아니오 |  |
+| handFeel / flexibility | string | 아니오 |  |
+| quantity | integer | 아니오 |  |
 | imageFull | file | 아니오 | 전체 사진 |
 | imageCloseup | file | 아니오 | 클로즈업 사진 |
 
@@ -104,9 +103,11 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 | f2 | GET | `/api/templates/{name}` | Drop 생성 없이 고정 템플릿 정보만 조회 (없으면 404) | ✅ 구현됨 |
 
 ### `POST /api/drops`
+
 요청 바디 없음.
 
 응답 (201):
+
 ```json
 {
   "id": "uuid",
@@ -121,6 +122,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 `role`(`MAIN`/`POINT`)은 b12 제작가능성 계산에서 이 조각을 주 소재와 포인트 소재 중 어디에 배치할지를 나타낸다(포인트 소재가 없으면 전부 주 소재에 배치). 미니백 템플릿은 앞판·뒷판이 `MAIN`, 옆판/바닥이 `POINT`다.
 
 ### `POST /api/drops/{dropId}/design-requirement`
+
 `multipart/form-data`:
 
 | 필드 | 타입 | 필수 | 허용 값 |
@@ -135,6 +137,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 `materialType`/`color`/`pattern`/`minGrade`는 `Material` 엔티티의 enum(`MaterialType`/`MaterialColor`/`MaterialPattern`/`MaterialGrade`)과 동일한 값을 그대로 씀 — b9에서 문자열 비교 없이 바로 매칭하기 위함. FE(f3)는 자유 입력 대신 Select로 받아 한글 라벨(예: "가죽")을 이 영문 enum 값(`LEATHER`)으로 변환해 전송해야 함. 잘못된 값이 오면 400으로 거부됨.
 
 응답 (200):
+
 ```json
 {
   "id": "uuid",
@@ -147,6 +150,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
   "usePointMaterial": true
 }
 ```
+
 같은 `dropId`로 재호출하면 새로 안 생기고 기존 것을 덮어씀(upsert).
 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
@@ -160,6 +164,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보만 미리 보여주기 위한 조회 전용 API. f2 화면 진입 시점마다 `POST /api/drops`를 호출하면 쓰지 않는 `DRAFT` Drop이 계속 쌓이는 문제를 막기 위해 추가됨. `name`에는 `미니백` 또는 `러기지 태그`를 사용하며, 없으면 404를 반환한다.
 
 응답 (200):
+
 ```json
 {
   "templateId": "uuid",
@@ -168,6 +173,7 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
   "requiredAccessories": [{ "accessoryType": "지퍼", "quantity": 1 }]
 }
 ```
+
 `POST /api/drops` 응답과 같은 템플릿 정보이지만 `id`(Drop ID)/`status`가 없고 필드명이 `templateId`/`templateName`이다.
 
 ---
@@ -188,6 +194,7 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
 ### `GET /api/accessories`
 
 응답 (200):
+
 ```json
 [
   {"id": "uuid", "accessoryType": "지퍼", "color": "GOLD"},
@@ -201,6 +208,7 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
 ### `POST /api/drops/{dropId}/material-selection`
 
 요청 바디:
+
 ```json
 {
   "mainCandidateId": "uuid",
@@ -217,6 +225,7 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
 ### `POST /api/drops/{dropId}/accessory-selections`
 
 요청 바디:
+
 ```json
 {
   "accessoryIds": ["지퍼 uuid", "링 uuid"]
@@ -250,7 +259,7 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 - 템플릿과 소재 치수는 모두 `mm` 단위로 계산한다.
 - 직사각형 패턴을 큰 조각부터 2차원으로 배치하며 90도 회전을 허용한다.
 - MVP에서는 모든 배치 조합을 완전탐색하지 않고, 실제 배치 성공이 확인된 보수적 수량을 반환한다.
-  따라서 결과는 안전하게 제작 가능한 수량이지만 수학적 최댓값을 항상 보장하지는 않는다.
+따라서 결과는 안전하게 제작 가능한 수량이지만 수학적 최댓값을 항상 보장하지는 않는다.
 - 소재 여러 장은 서로 붙이지 않고 한 장씩 계산한 뒤 수량을 합산한다.
 - 포인트 소재가 없으면 모든 미니백 패턴을 주 소재에 배치한다.
 - 포인트 소재가 있으면 앞판·뒷판은 주 소재, 옆판/바닥은 포인트 소재에 배치한다.
@@ -267,6 +276,7 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 ## Stage 5 — Drop 확정 (담당: 김재현) — ✅ 구현됨
 
 > v5부터 "발행/공개" 개념 없음 — 확정(CONFIRMED)까지가 이 서비스의 마지막 단계.
+> 
 
 | ID | Method | Path | 설명 | 상태 |
 | --- | --- | --- | --- | --- |
@@ -278,25 +288,29 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 
 **변경 이력 (2026-08-15, 김재현)**: AI 초안이 마음에 안 들 때 다시 시도할 방법이 없다는 문제로 `POST /api/drops/{dropId}/intro-text`(재생성)를 되살렸다. 단, 인증이 없는 내부 도구라 제한 없이 반복 호출하면 OpenAI 크레딧이 과도하게 소모될 수 있어 **Drop당 총 6회**(b13 최초 생성 1회 + b14 재생성 최대 5회)로 상한을 뒀다. 실패한 시도도 이미 API 호출이 나간 뒤라 횟수에 포함된다. 6회를 모두 쓰면 재생성 API는 `409`를 반환하고, 이후엔 `PATCH /intro-text`(수동 입력)만 가능하다.
 
-**병합 완료 (2026-08-15, PR [#11](https://github.com/Caution-new-driver/CND-BE/pull/11))**: `dev`에 머지됨.
+**병합 완료 (2026-08-15, PR #11)**: `dev`에 머지됨.
 
 ### `PATCH /api/drops/{dropId}/confirm`
 
 요청 바디:
+
 ```json
 {
   "name": "2026 가을 미니백 캡슐",
   "expectedProductionDays": 14
 }
 ```
+
 `name`은 필수(담당자 직접 입력 — AI 자동 생성 아님), `expectedProductionDays`는 선택이며 보내면 1 이상이어야 한다.
 
 아래 조건을 모두 만족해야 성공한다 (하나라도 없으면 `409 Conflict`):
+
 - 제작안(b12)이 선택돼 있어야 함 (`Drop.selectedScenarioId`)
 - 주 소재 확정(b11 `/material-selection`)이 저장돼 있어야 함
 - 부자재 확정(b11 `/accessory-selections`)이 저장돼 있어야 함
 
 응답 (200):
+
 ```json
 {
   "id": "uuid",
@@ -309,6 +323,7 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
   "regenerationsRemaining": 5
 }
 ```
+
 넘버링은 새로 계산하지 않고 b12에서 선택해둔 시나리오 값을 그대로 확정해 보여준다. 확정된 주/포인트 소재는 `DEPLETED`로 전환된다. `introText`는 AI 생성이 성공하면 채워지고, OpenAI 호출이 실패해도 확정 자체는 그대로 성공하며 이때는 `null`로 내려온다(트랜잭션 밖에서 호출되므로 AI 실패가 DB 확정을 막지 않음).
 
 ### `POST /api/drops/{dropId}/intro-text` (AI 재생성)
@@ -316,6 +331,7 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 요청 바디 없음. `PATCH /confirm`에서 받은 AI 초안이 마음에 안 들 때 다시 생성 요청한다.
 
 응답 (200):
+
 ```json
 { "dropId": "uuid", "introText": "...", "regenerationsRemaining": 4 }
 ```
@@ -323,6 +339,7 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 ### `PATCH /api/drops/{dropId}/intro-text` (수동 저장)
 
 요청 바디:
+
 ```json
 { "introText": "담당자가 직접 고친 최종 소개문" }
 ```
@@ -330,12 +347,3 @@ OpenAI 추천이 실패하면 기존 선택·후보·제작 시나리오는 그�
 응답 (200): `POST` 재생성과 동일한 형태.
 
 `POST /intro-text`(재생성)와 `PATCH /intro-text`(수동 저장) 둘 다 Drop이 `CONFIRMED` 상태가 아니면 거부된다(`409`). 응답엔 공통으로 `regenerationsRemaining`(남은 재생성 가능 횟수, 0~5)이 포함되며, `PATCH`(수동 저장)는 이 횟수를 소모하지 않는다.
-
----
-
-## 팀 미팅에서 확정하면 좋을 것
-
-1. 위 "열린 질문" 2가지 (Stage 1: `DELETE /api/materials/{id}`의 상태 확인 없는 삭제, Stage 2: `design-requirement` 필수 필드)
-2. 에러 응답 공통 포맷 (지금은 `{"message": "..."}` 하나만 씀 — 필드 에러 등 세분화 필요할지)
-3. ~~인증 없음이 확정~~ → 2026-08-15 결정 변경: MCM 관계자 전용 공유 비밀번호 로그인 도입 (위 "인증" 섹션 참고). 프론트는 로그인 페이지 추가 + 모든 API 요청에 `Authorization` 헤더 부착 필요.
-4. ~~Stage 5(`b13`,`b14`)는 아직 미착수~~ → 2026-08-15 PR [#11](https://github.com/Caution-new-driver/CND-BE/pull/11) 병합으로 완료. 이로써 백엔드 몫(`b0~b14`)은 전부 구현 완료(FE `f1,f4~f7`는 별도).
