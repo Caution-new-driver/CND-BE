@@ -17,3 +17,8 @@ cloudinary:
   cloud-name: test-cloud
   api-key: test-key
   api-secret: test-secret
+
+app:
+  auth:
+    access-password: test-password
+    session-secret: test-session-secret
