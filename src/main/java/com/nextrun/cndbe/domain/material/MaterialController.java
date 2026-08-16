@@ -1,5 +1,6 @@
 package com.nextrun.cndbe.domain.material;
 
+import com.nextrun.cndbe.domain.material.dto.MaterialAiTagPreviewRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialCreateRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialResponse;
 import com.nextrun.cndbe.domain.material.dto.MaterialUpdateRequest;
@@ -30,6 +31,15 @@ public class MaterialController {
     @ResponseStatus(HttpStatus.CREATED)
     public MaterialResponse create(@ModelAttribute MaterialCreateRequest request) {
         return MaterialResponse.from(materialService.create(request));
+    }
+
+    // [등록 전 AI 미리보기] POST /api/materials/ai-tag-preview
+    // 소재를 저장하지 않고, 업로드한 사진만으로 AI 태깅 결과를 미리 보여준다.
+    @Operation(summary = "AI 태깅 미리보기", description = "소재를 등록하기 전, 업로드한 사진(전체샷 필수, 클로즈업 선택)만으로 "
+            + "AI 태깅 결과를 미리 확인합니다. 소재는 저장되지 않습니다.")
+    @PostMapping(value = "/ai-tag-preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public MaterialAiTagResult tagPreview(@ModelAttribute MaterialAiTagPreviewRequest request) {
+        return materialService.tagPreview(request);
     }
 
     // [단건 조회] GET /api/materials/{id}

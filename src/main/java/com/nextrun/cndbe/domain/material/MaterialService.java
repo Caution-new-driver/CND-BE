@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.material;
 
 import com.nextrun.cndbe.common.client.CloudinaryImageUploader;
+import com.nextrun.cndbe.domain.material.dto.MaterialAiTagPreviewRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialCreateRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialUpdateRequest;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
@@ -119,6 +120,21 @@ public class MaterialService {
         material.setSurfaceNotes(result.surfaceNotes());
 
         return material;
+    }
+
+    // b6확장: 소재를 등록하기 전, 사진만 올린 상태에서 미리 AI 태깅 결과를 보여주기 위한 무상태(stateless) 태깅.
+    // Material을 저장하지 않고 사진만 업로드해서 AI한테 물어보고 결과만 돌려준다.
+    public MaterialAiTagResult tagPreview(MaterialAiTagPreviewRequest request) {
+        if (request.getImageFull() == null || request.getImageFull().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageFull은 필수입니다.");
+        }
+
+        String imageUrlFull = imageUploader.upload(request.getImageFull());
+        String imageUrlCloseup = (request.getImageCloseup() != null && !request.getImageCloseup().isEmpty())
+                ? imageUploader.upload(request.getImageCloseup())
+                : null;
+
+        return aiTaggingClient.tag(imageUrlFull, imageUrlCloseup);
     }
 
     // id로 소재를 찾고, 없으면 404 에러를 던지는 부분을 한 곳으로 모아둠 (중복 제거)
