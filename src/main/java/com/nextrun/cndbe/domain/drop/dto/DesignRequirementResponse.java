@@ -21,7 +21,6 @@ public class DesignRequirementResponse {
 	private MaterialPattern pattern;
 	private MaterialGrade minGrade;
 	private AccessoryColor accessoryColor;
-	private Boolean usePointMaterial;
 
 	public static DesignRequirementResponse from(DesignRequirement requirement) {
 		return DesignRequirementResponse.builder()
@@ -32,7 +31,6 @@ public class DesignRequirementResponse {
 				.pattern(requirement.getPattern())
 				.minGrade(requirement.getMinGrade())
 				.accessoryColor(requirement.getAccessoryColor())
-				.usePointMaterial(requirement.getUsePointMaterial())
 				.build();
 	}
 }

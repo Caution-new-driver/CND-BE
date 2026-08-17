@@ -52,8 +52,7 @@ public class DropService {
 			MaterialColor color,
 			MaterialPattern pattern,
 			MaterialGrade minGrade,
-			AccessoryColor accessoryColor,
-			Boolean usePointMaterial) {
+			AccessoryColor accessoryColor) {
 
 		Drop drop = dropRepository.findById(dropId)
 				.orElseThrow(() -> new NoSuchElementException("존재하지 않는 Drop입니다: " + dropId));
@@ -68,7 +67,6 @@ public class DropService {
 		requirement.setPattern(pattern);
 		requirement.setMinGrade(minGrade);
 		requirement.setAccessoryColor(accessoryColor);
-		requirement.setUsePointMaterial(usePointMaterial);
 
 		return designRequirementRepository.save(requirement);
 	}

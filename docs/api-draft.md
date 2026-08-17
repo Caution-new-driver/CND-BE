@@ -132,7 +132,6 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 | pattern | enum(string) | 아니오 | `MONOGRAM`, `SOLID`, `GEOMETRIC`, `STRIPE`, `OTHER` |
 | minGrade | enum(string) | 아니오 | `A`, `B`, `C` |
 | accessoryColor | enum(string) | 아니오 | `GOLD`, `SILVER`, `BLACK` |
-| usePointMaterial | boolean | 아니오 | - |
 
 `materialType`/`color`/`pattern`/`minGrade`는 `Material` 엔티티의 enum(`MaterialType`/`MaterialColor`/`MaterialPattern`/`MaterialGrade`)과 동일한 값을 그대로 씀 — b9에서 문자열 비교 없이 바로 매칭하기 위함. FE(f3)는 자유 입력 대신 Select로 받아 한글 라벨(예: "가죽")을 이 영문 enum 값(`LEATHER`)으로 변환해 전송해야 함. 잘못된 값이 오면 400으로 거부됨.
 
@@ -146,8 +145,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
   "color": "BLACK",
   "pattern": "SOLID",
   "minGrade": "A",
-  "accessoryColor": "GOLD",
-  "usePointMaterial": true
+  "accessoryColor": "GOLD"
 }
 ```
 
@@ -156,6 +154,8 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
 
 **변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`와 `Accessory.color`는 모두 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 사용한다.
+
+**변경 이력 (2026-08-18, 김재현)**: `usePointMaterial` 필드 제거. 저장·응답만 될 뿐 b9~b12 어느 로직에서도 참조되지 않는 죽은 입력값이었음 — 실제 포인트 소재 사용 여부는 b11 소재 확정 단계에서 `pointCandidateId` 제출 여부로 결정됨.
 
 **변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 

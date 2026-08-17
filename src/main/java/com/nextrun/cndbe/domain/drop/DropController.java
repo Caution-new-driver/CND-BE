@@ -66,7 +66,7 @@ public class DropController {
     // b8: 디자인 조건 저장 (스케치 이미지 첨부 포함, 선택사항)
     @Operation(
             summary = "디자인 조건 저장",
-            description = "소재 타입·색상·패턴·최소 등급·부자재 색상·포인트 소재 사용 여부를 저장합니다. "
+            description = "소재 타입·색상·패턴·최소 등급·부자재 색상을 저장합니다. "
                     + "같은 Drop으로 재호출하면 새로 생기지 않고 기존 조건을 덮어씁니다(upsert)."
     )
     @PostMapping(value = "/api/drops/{dropId}/design-requirement")
@@ -76,10 +76,9 @@ public class DropController {
             @RequestParam(required = false) MaterialColor color,
             @RequestParam(required = false) MaterialPattern pattern,
             @RequestParam(required = false) MaterialGrade minGrade,
-            @RequestParam(required = false) AccessoryColor accessoryColor,
-            @RequestParam(required = false) Boolean usePointMaterial) {
+            @RequestParam(required = false) AccessoryColor accessoryColor) {
         DesignRequirement requirement = dropService.saveDesignRequirement(
-                dropId, materialType, color, pattern, minGrade, accessoryColor, usePointMaterial);
+                dropId, materialType, color, pattern, minGrade, accessoryColor);
         return DesignRequirementResponse.from(requirement);
     }
 

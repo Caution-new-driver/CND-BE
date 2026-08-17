@@ -56,6 +56,4 @@ public class DesignRequirement extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	private AccessoryColor accessoryColor;
-
-	private Boolean usePointMaterial;
 }
