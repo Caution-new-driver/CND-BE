@@ -1,6 +1,8 @@
 package com.nextrun.cndbe.domain.drop;
 
 import jakarta.persistence.LockModeType;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -20,4 +22,6 @@ public interface DropRepository extends JpaRepository<Drop, UUID> {
 	@EntityGraph(attributePaths = "template")
 	@Query("select d from Drop d where d.id = :id")
 	Optional<Drop> findByIdWithTemplate(@Param("id") UUID id);
+
+    List<Drop> findByStatus(DropStatus status);
 }

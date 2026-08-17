@@ -7,6 +7,8 @@ import com.nextrun.cndbe.domain.material.MaterialPattern;
 import com.nextrun.cndbe.domain.material.MaterialType;
 import com.nextrun.cndbe.domain.material.Template;
 import com.nextrun.cndbe.domain.material.TemplateRepository;
+
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,13 @@ public class DropService {
 				.build();
 		return dropRepository.save(drop);
 	}
+
+    public List<Drop> list(DropStatus status) {
+        if (status != null) {
+            return dropRepository.findByStatus(status);
+        }
+        return dropRepository.findAll();
+    }
 
 	@Transactional
 	public DesignRequirement saveDesignRequirement(
