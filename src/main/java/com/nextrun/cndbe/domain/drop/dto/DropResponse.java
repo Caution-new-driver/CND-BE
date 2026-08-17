@@ -10,27 +10,35 @@ import lombok.Getter;
 @Builder
 public class DropResponse {
 
-	private UUID id;
-	private String status;
+    private UUID id;
+    private String status;
 
-	private UUID templateId;
-	private String templateName;
+    // b13 확정 시점에 채워짐. 확정 전(DRAFT)에는 null.
+    private String name;
+    private String introText;
+    private Integer expectedProductionDays;
 
-	// Template에 JSON 문자열로 저장돼 있는 값을 그대로 raw JSON으로 내려줌 (이중 이스케이프 방지)
-	@JsonRawValue
-	private String patternPieces;
+    private UUID templateId;
+    private String templateName;
 
-	@JsonRawValue
-	private String requiredAccessories;
+    // Template에 JSON 문자열로 저장돼 있는 값을 그대로 raw JSON으로 내려줌 (이중 이스케이프 방지)
+    @JsonRawValue
+    private String patternPieces;
 
-	public static DropResponse from(Drop drop) {
-		return DropResponse.builder()
-				.id(drop.getId())
-				.status(drop.getStatus().name())
-				.templateId(drop.getTemplate().getId())
-				.templateName(drop.getTemplate().getName())
-				.patternPieces(drop.getTemplate().getPatternPieces())
-				.requiredAccessories(drop.getTemplate().getRequiredAccessories())
-				.build();
-	}
+    @JsonRawValue
+    private String requiredAccessories;
+
+    public static DropResponse from(Drop drop) {
+        return DropResponse.builder()
+                .id(drop.getId())
+                .status(drop.getStatus().name())
+                .name(drop.getName())
+                .introText(drop.getIntroText())
+                .expectedProductionDays(drop.getExpectedProductionDays())
+                .templateId(drop.getTemplate().getId())
+                .templateName(drop.getTemplate().getName())
+                .patternPieces(drop.getTemplate().getPatternPieces())
+                .requiredAccessories(drop.getTemplate().getRequiredAccessories())
+                .build();
+    }
 }
