@@ -131,7 +131,6 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 | color | enum(string) | 아니오 | `BLACK`, `BROWN`, `BEIGE`, `WHITE`, `RED`, `BLUE`, `MULTI`, `OTHER` |
 | pattern | enum(string) | 아니오 | `MONOGRAM`, `SOLID`, `GEOMETRIC`, `STRIPE`, `OTHER` |
 | minGrade | enum(string) | 아니오 | `A`, `B`, `C` |
-| accessoryColor | enum(string) | 아니오 | `GOLD`, `SILVER`, `BLACK` |
 
 `materialType`/`color`/`pattern`/`minGrade`는 `Material` 엔티티의 enum(`MaterialType`/`MaterialColor`/`MaterialPattern`/`MaterialGrade`)과 동일한 값을 그대로 씀 — b9에서 문자열 비교 없이 바로 매칭하기 위함. FE(f3)는 자유 입력 대신 Select로 받아 한글 라벨(예: "가죽")을 이 영문 enum 값(`LEATHER`)으로 변환해 전송해야 함. 잘못된 값이 오면 400으로 거부됨.
 
@@ -144,8 +143,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
   "materialType": "LEATHER",
   "color": "BLACK",
   "pattern": "SOLID",
-  "minGrade": "A",
-  "accessoryColor": "GOLD"
+  "minGrade": "A"
 }
 ```
 
@@ -156,6 +154,8 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 **변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`와 `Accessory.color`는 모두 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 사용한다.
 
 **변경 이력 (2026-08-18, 김재현)**: `usePointMaterial` 필드 제거. 저장·응답만 될 뿐 b9~b12 어느 로직에서도 참조되지 않는 죽은 입력값이었음 — 실제 포인트 소재 사용 여부는 b11 소재 확정 단계에서 `pointCandidateId` 제출 여부로 결정됨.
+
+**변경 이력 (2026-08-18, 김재현)**: `accessoryColor` 필드 제거 및 부자재 색상 검증 완화. 기존에는 이 필드로 선호 색상을 미리 선언하고 `/accessory-selections` 호출 시 그 값과 일치하는지, 지퍼·링이 서로 같은 색상인지 교차검증했으나 두 검증 모두 제거함. 이제 부자재 색상은 사전 선언 없이 `/accessory-selections` 호출 시점에 바로 정해지고, 지퍼와 링을 서로 다른 색상으로 선택해도 된다.
 
 **변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 
@@ -235,8 +235,9 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
 `GET /api/accessories`에서 받은 ID를 사용한다. 미니백 템플릿의 필수 종류인
 지퍼와 링이 각각 하나씩 포함돼야 하며, 같은 Drop에서 재호출하면 기존 부자재
 선택을 새 세트로 교체한다. 링의 필요 수량 2개는 템플릿 정보로 관리하므로 같은
-부자재 ID를 두 번 보내지 않는다. 한 세트의 지퍼와 링은 같은 색상이어야 하고,
-디자인 조건의 `accessoryColor`가 지정됐다면 해당 색상과 일치해야 한다.
+부자재 ID를 두 번 보내지 않는다. 지퍼와 링은 서로 다른 색상으로 선택해도 되며,
+디자인 조건 단계에서 미리 지정해야 하는 색상 제약은 없다 — 이 API를 호출하는 시점에
+바로 색상까지 확정된다.
 
 응답 (200): Drop ID와 저장된 부자재 선택 ID·부자재 ID·종류·색상을 반환한다.
 

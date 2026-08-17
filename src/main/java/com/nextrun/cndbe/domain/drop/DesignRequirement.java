@@ -1,7 +1,6 @@
 package com.nextrun.cndbe.domain.drop;
 
 import com.nextrun.cndbe.common.BaseEntity;
-import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.MaterialColor;
 import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
@@ -53,7 +52,4 @@ public class DesignRequirement extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	private MaterialGrade minGrade;
-
-	@Enumerated(EnumType.STRING)
-	private AccessoryColor accessoryColor;
 }

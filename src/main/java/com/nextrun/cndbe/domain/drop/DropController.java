@@ -6,7 +6,6 @@ import com.nextrun.cndbe.domain.drop.dto.DropConfirmResponse;
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextRequest;
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextResponse;
 import com.nextrun.cndbe.domain.drop.dto.DropResponse;
-import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.MaterialColor;
 import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
@@ -66,7 +65,7 @@ public class DropController {
     // b8: 디자인 조건 저장 (스케치 이미지 첨부 포함, 선택사항)
     @Operation(
             summary = "디자인 조건 저장",
-            description = "소재 타입·색상·패턴·최소 등급·부자재 색상을 저장합니다. "
+            description = "소재 타입·색상·패턴·최소 등급을 저장합니다. "
                     + "같은 Drop으로 재호출하면 새로 생기지 않고 기존 조건을 덮어씁니다(upsert)."
     )
     @PostMapping(value = "/api/drops/{dropId}/design-requirement")
@@ -75,10 +74,9 @@ public class DropController {
             @RequestParam(required = false) MaterialType materialType,
             @RequestParam(required = false) MaterialColor color,
             @RequestParam(required = false) MaterialPattern pattern,
-            @RequestParam(required = false) MaterialGrade minGrade,
-            @RequestParam(required = false) AccessoryColor accessoryColor) {
+            @RequestParam(required = false) MaterialGrade minGrade) {
         DesignRequirement requirement = dropService.saveDesignRequirement(
-                dropId, materialType, color, pattern, minGrade, accessoryColor);
+                dropId, materialType, color, pattern, minGrade);
         return DesignRequirementResponse.from(requirement);
     }
 

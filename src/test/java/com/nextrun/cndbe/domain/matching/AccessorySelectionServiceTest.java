@@ -4,13 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.nextrun.cndbe.domain.drop.Drop;
-import com.nextrun.cndbe.domain.drop.DesignRequirement;
-import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.DropRepository;
 import com.nextrun.cndbe.domain.drop.DropStatus;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionRequest;
@@ -36,9 +33,6 @@ class AccessorySelectionServiceTest {
 
     @Mock
     private DropRepository dropRepository;
-
-    @Mock
-    private DesignRequirementRepository designRequirementRepository;
 
     @Mock
     private AccessoryRepository accessoryRepository;
@@ -74,10 +68,6 @@ class AccessorySelectionServiceTest {
         when(accessoryRepository.findAllById(
                 List.of(zipper.getId(), ring.getId())
         )).thenReturn(List.of(ring, zipper));
-        when(designRequirementRepository.findByDrop_Id(dropId))
-                .thenReturn(Optional.of(DesignRequirement.builder()
-                        .accessoryColor(AccessoryColor.GOLD)
-                        .build()));
         when(selectionRepository.saveAll(anyList()))
                 .thenAnswer(invocation -> {
                     List<DropAccessorySelection> selections =
@@ -106,8 +96,7 @@ class AccessorySelectionServiceTest {
         );
         verify(templateAccessoryValidator).validate(
                 drop.getTemplate(),
-                List.of(ring, zipper),
-                AccessoryColor.GOLD
+                List.of(ring, zipper)
         );
 
         InOrder order = inOrder(selectionRepository);
@@ -178,61 +167,6 @@ class AccessorySelectionServiceTest {
                         dropId,
                         new AccessorySelectionRequest(
                                 List.of(UUID.randomUUID())
-                        )
-                )
-        );
-    }
-
-    @Test
-    void 디자인_조건과_다른_부자재_색상은_저장하지_않는다() {
-        Accessory zipper = accessory("지퍼", AccessoryColor.SILVER);
-        Accessory ring = accessory("링", AccessoryColor.SILVER);
-        when(dropRepository.findByIdForUpdate(dropId))
-                .thenReturn(Optional.of(drop));
-        when(accessoryRepository.findAllById(
-                List.of(zipper.getId(), ring.getId())
-        )).thenReturn(List.of(zipper, ring));
-        when(designRequirementRepository.findByDrop_Id(dropId))
-                .thenReturn(Optional.of(DesignRequirement.builder()
-                        .accessoryColor(AccessoryColor.GOLD)
-                        .build()));
-        doThrow(new IllegalArgumentException(
-                "디자인 조건의 부자재 색상과 일치해야 합니다."
-        )).when(templateAccessoryValidator).validate(
-                drop.getTemplate(),
-                List.of(zipper, ring),
-                AccessoryColor.GOLD
-        );
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> service.selectAccessories(
-                        dropId,
-                        new AccessorySelectionRequest(
-                                List.of(zipper.getId(), ring.getId())
-                        )
-                )
-        );
-    }
-
-    @Test
-    void 디자인_조건이_없으면_부자재를_선택할_수_없다() {
-        Accessory zipper = accessory("지퍼", AccessoryColor.GOLD);
-        Accessory ring = accessory("링", AccessoryColor.GOLD);
-        when(dropRepository.findByIdForUpdate(dropId))
-                .thenReturn(Optional.of(drop));
-        when(accessoryRepository.findAllById(
-                List.of(zipper.getId(), ring.getId())
-        )).thenReturn(List.of(zipper, ring));
-        when(designRequirementRepository.findByDrop_Id(dropId))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                NoSuchElementException.class,
-                () -> service.selectAccessories(
-                        dropId,
-                        new AccessorySelectionRequest(
-                                List.of(zipper.getId(), ring.getId())
                         )
                 )
         );

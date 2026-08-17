@@ -1,7 +1,6 @@
 package com.nextrun.cndbe.domain.drop.dto;
 
 import com.nextrun.cndbe.domain.drop.DesignRequirement;
-import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.MaterialColor;
 import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
@@ -20,7 +19,6 @@ public class DesignRequirementResponse {
 	private MaterialColor color;
 	private MaterialPattern pattern;
 	private MaterialGrade minGrade;
-	private AccessoryColor accessoryColor;
 
 	public static DesignRequirementResponse from(DesignRequirement requirement) {
 		return DesignRequirementResponse.builder()
@@ -30,7 +28,6 @@ public class DesignRequirementResponse {
 				.color(requirement.getColor())
 				.pattern(requirement.getPattern())
 				.minGrade(requirement.getMinGrade())
-				.accessoryColor(requirement.getAccessoryColor())
 				.build();
 	}
 }

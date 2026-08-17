@@ -1,6 +1,5 @@
 package com.nextrun.cndbe.domain.drop;
 
-import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.MaterialColor;
 import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
@@ -51,8 +50,7 @@ public class DropService {
 			MaterialType materialType,
 			MaterialColor color,
 			MaterialPattern pattern,
-			MaterialGrade minGrade,
-			AccessoryColor accessoryColor) {
+			MaterialGrade minGrade) {
 
 		Drop drop = dropRepository.findById(dropId)
 				.orElseThrow(() -> new NoSuchElementException("존재하지 않는 Drop입니다: " + dropId));
@@ -66,7 +64,6 @@ public class DropService {
 		requirement.setColor(color);
 		requirement.setPattern(pattern);
 		requirement.setMinGrade(minGrade);
-		requirement.setAccessoryColor(accessoryColor);
 
 		return designRequirementRepository.save(requirement);
 	}
