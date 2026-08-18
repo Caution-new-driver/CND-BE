@@ -39,9 +39,9 @@ public class DropService {
 
     public List<Drop> list(DropStatus status) {
         if (status != null) {
-            return dropRepository.findByStatus(status);
+            return dropRepository.findByStatusOrderByCreatedAtDesc(status);
         }
-        return dropRepository.findAll();
+        return dropRepository.findAllByOrderByCreatedAtDesc();
     }
 
 	// "이어서 제작" 재진입 시 f3 폼을 채우기 위한 조회. 아직 저장한 적 없으면 404.

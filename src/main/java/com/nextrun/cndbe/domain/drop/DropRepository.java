@@ -23,5 +23,8 @@ public interface DropRepository extends JpaRepository<Drop, UUID> {
 	@Query("select d from Drop d where d.id = :id")
 	Optional<Drop> findByIdWithTemplate(@Param("id") UUID id);
 
-    List<Drop> findByStatus(DropStatus status);
+    // 목록 화면에서 가장 최근에 생성한 Drop이 위로 오도록 정렬해서 조회함.
+    List<Drop> findAllByOrderByCreatedAtDesc();
+
+    List<Drop> findByStatusOrderByCreatedAtDesc(DropStatus status);
 }
