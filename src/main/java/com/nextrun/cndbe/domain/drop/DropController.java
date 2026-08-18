@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +36,7 @@ public class DropController {
     private final DropService dropService;
     private final DropConfirmationService dropConfirmationService;
     private final DropIntroTextService dropIntroTextService;
+    private final DropDeletionService dropDeletionService;
 
     // b7: 새 RUN Drop 기획 시작 - draft 상태 Drop 생성, 고정 미니백 템플릿 정보 함께 반환
     @Operation(
@@ -89,6 +91,21 @@ public class DropController {
     public DesignRequirementResponse getDesignRequirement(
             @Parameter(description = "디자인 조건을 조회할 Drop ID") @PathVariable UUID dropId) {
         return DesignRequirementResponse.from(dropService.getDesignRequirement(dropId));
+    }
+
+    // DRAFT Drop과 그동안 저장된 하위 데이터(디자인 조건·추천 후보·소재/부자재 선택·제작안)를
+    // 통째로 삭제. 예약해둔 소재는 다시 AVAILABLE로 돌아감.
+    @Operation(
+            summary = "Drop 삭제",
+            description = "아직 확정하지 않은(DRAFT) Drop과 그 하위 데이터를 모두 삭제합니다. "
+                    + "예약해둔 소재는 다시 AVAILABLE로 돌아갑니다. "
+                    + "이미 확정된(CONFIRMED) Drop은 삭제할 수 없습니다(409)."
+    )
+    @DeleteMapping("/api/drops/{dropId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @Parameter(description = "삭제할 Drop ID") @PathVariable UUID dropId) {
+        dropDeletionService.delete(dropId);
     }
 
     // b13: 선택된 제작안(b12)과 소재 조합(b11)을 확정하고 Drop 상태를 CONFIRMED로 전환
