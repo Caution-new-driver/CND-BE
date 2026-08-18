@@ -58,6 +58,16 @@ public class AccessorySelectionService {
                         Function.identity()
                 ));
 
+        // f4 "이전 단계로"↔"다음" 왕복처럼 같은 세트를 다시 제출하는 경우까지 매번
+        // 지우고 새로 저장하면 selectionId만 계속 바뀌는 불필요한 쓰기라 건너뛴다.
+        List<DropAccessorySelection> existingSelections = selectionRepository.findAllByDrop_Id(dropId);
+        Set<UUID> existingAccessoryIds = existingSelections.stream()
+                .map(selection -> selection.getAccessory().getId())
+                .collect(Collectors.toSet());
+        if (existingAccessoryIds.equals(Set.copyOf(requestedIds))) {
+            return AccessorySelectionResponse.from(dropId, existingSelections);
+        }
+
         List<DropAccessorySelection> newSelections = requestedIds.stream()
                 .map(accessoryById::get)
                 .map(accessory -> DropAccessorySelection.builder()

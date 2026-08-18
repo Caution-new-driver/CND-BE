@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -78,6 +79,19 @@ public class MaterialSelectionService {
             newMaterialIds.add(pointMaterialId);
         }
 
+        // f4 "이전 단계로"↔"다음" 왕복처럼, 실제로는 같은 조합을 다시 제출하는 경우까지
+        // b12(제작안) 결과를 폐기하면 이미 계산·선택해둔 f5 상태가 이유 없이 날아간다.
+        // 주/포인트 "역할"까지 같아야 진짜 무변경으로 본다(두 소재를 서로 바꿔 낸 경우는
+        // 역할이 달라졌으므로 여전히 변경으로 취급).
+        UUID existingMainMaterialId = selection.getMainMaterial() == null
+                ? null
+                : selection.getMainMaterial().getId();
+        UUID existingPointMaterialId = selection.getPointMaterial() == null
+                ? null
+                : selection.getPointMaterial().getId();
+        boolean selectionUnchanged = mainMaterialId.equals(existingMainMaterialId)
+                && Objects.equals(pointMaterialId, existingPointMaterialId);
+
         // 기존 소재와 새 소재를 한 번에 잠가서 두 Drop이 같은 소재를 동시에 예약하지 못하게 함.
         Set<UUID> materialIdsToLock = new LinkedHashSet<>(oldMaterialIds);
         materialIdsToLock.addAll(newMaterialIds);
@@ -94,8 +108,10 @@ public class MaterialSelectionService {
                         : lockedMaterials.get(pointMaterialId)
         );
 
-        // 소재 조합이 다시 저장되면 이전 소재로 계산한 b12 결과는 더 이상 유효하지 않다.
-        scenarioInvalidator.invalidate(drop);
+        // 소재 조합이 실제로 바뀐 경우에만 이전 소재로 계산한 b12 결과를 폐기한다.
+        if (!selectionUnchanged) {
+            scenarioInvalidator.invalidate(drop);
+        }
 
         return MaterialSelectionResponse.from(
                 selectionRepository.save(selection)
