@@ -44,6 +44,13 @@ public class DropService {
         return dropRepository.findAll();
     }
 
+	// "이어서 제작" 재진입 시 f3 폼을 채우기 위한 조회. 아직 저장한 적 없으면 404.
+	public DesignRequirement getDesignRequirement(java.util.UUID dropId) {
+		return designRequirementRepository.findByDrop_Id(dropId)
+				.orElseThrow(() -> new NoSuchElementException(
+						"디자인 조건을 찾을 수 없습니다: " + dropId));
+	}
+
 	@Transactional
 	public DesignRequirement saveDesignRequirement(
 			java.util.UUID dropId,

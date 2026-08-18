@@ -102,6 +102,17 @@ public class MaterialSelectionService {
         );
     }
 
+    // "이어서 제작" 재진입 시 f4에서 이전에 확정한 조합을 복원하기 위한 조회.
+    @Transactional(readOnly = true)
+    public MaterialSelectionResponse getSelection(UUID dropId) {
+        DropMaterialSelection selection = selectionRepository
+                .findByDrop_Id(dropId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "소재 선택 정보를 찾을 수 없습니다: " + dropId
+                ));
+        return MaterialSelectionResponse.from(selection);
+    }
+
     // f4에서 조건을 수정해 후보를 다시 계산하면 이전 확정본을 지우고
     // 해당 Drop이 잡고 있던 RESERVED 소재를 다시 AVAILABLE로 돌려놓음.
     @Transactional

@@ -76,6 +76,14 @@ public class AccessorySelectionService {
         );
     }
 
+    // "이어서 제작" 재진입 시 f4에서 이전에 선택한 부자재 세트를 복원하기 위한 조회.
+    // 부자재는 선택사항이라 하나도 안 골랐어도 에러가 아니라 빈 목록으로 응답함.
+    @Transactional(readOnly = true)
+    public AccessorySelectionResponse getSelections(UUID dropId) {
+        List<DropAccessorySelection> selections = selectionRepository.findAllByDrop_Id(dropId);
+        return AccessorySelectionResponse.from(dropId, selections);
+    }
+
     private Drop findEditableDrop(UUID dropId) {
         Drop drop = dropRepository.findByIdForUpdate(dropId)
                 .orElseThrow(() -> new NoSuchElementException(

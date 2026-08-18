@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,5 +38,18 @@ public class AccessorySelectionController {
             @Valid @RequestBody AccessorySelectionRequest request
     ) {
         return accessorySelectionService.selectAccessories(dropId, request);
+    }
+
+    // "이어서 제작" 재진입 시 f4에서 이전에 선택한 부자재 세트를 복원하기 위한 조회.
+    @Operation(
+            summary = "부자재 세트 선택 조회",
+            description = "이 Drop에 저장된 부자재 선택을 조회합니다. 하나도 선택한 적이 없으면 빈 목록을 반환합니다."
+    )
+    @GetMapping
+    public AccessorySelectionResponse getSelections(
+            @Parameter(description = "부자재 선택을 조회할 Drop ID")
+            @PathVariable UUID dropId
+    ) {
+        return accessorySelectionService.getSelections(dropId);
     }
 }

@@ -80,6 +80,17 @@ public class DropController {
         return DesignRequirementResponse.from(requirement);
     }
 
+    // "이어서 제작" 재진입 시 f3 폼을 이전에 저장한 값으로 채우기 위한 조회.
+    @Operation(
+            summary = "디자인 조건 조회",
+            description = "이 Drop에 저장된 디자인 조건을 조회합니다. 아직 저장한 적이 없으면 404를 반환합니다."
+    )
+    @GetMapping("/api/drops/{dropId}/design-requirement")
+    public DesignRequirementResponse getDesignRequirement(
+            @Parameter(description = "디자인 조건을 조회할 Drop ID") @PathVariable UUID dropId) {
+        return DesignRequirementResponse.from(dropService.getDesignRequirement(dropId));
+    }
+
     // b13: 선택된 제작안(b12)과 소재 조합(b11)을 확정하고 Drop 상태를 CONFIRMED로 전환
     @Operation(
             summary = "Drop 확정",
