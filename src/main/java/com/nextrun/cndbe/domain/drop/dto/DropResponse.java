@@ -2,6 +2,7 @@ package com.nextrun.cndbe.domain.drop.dto;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.nextrun.cndbe.domain.drop.Drop;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,6 +18,7 @@ public class DropResponse {
     private String name;
     private String introText;
     private Integer expectedProductionDays;
+    private LocalDateTime createdAt;
 
     private UUID templateId;
     private String templateName;
@@ -35,6 +37,7 @@ public class DropResponse {
                 .name(drop.getName())
                 .introText(drop.getIntroText())
                 .expectedProductionDays(drop.getExpectedProductionDays())
+                .createdAt(drop.getCreatedAt())
                 .templateId(drop.getTemplate().getId())
                 .templateName(drop.getTemplate().getName())
                 .patternPieces(drop.getTemplate().getPatternPieces())
