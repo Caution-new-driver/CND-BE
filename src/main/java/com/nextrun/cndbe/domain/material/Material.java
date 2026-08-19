@@ -59,6 +59,11 @@ public class Material extends BaseEntity {
 	private String imageUrlFull;
 	private String imageUrlCloseup;
 
+	// Cloudinary 삭제 API(destroy)는 URL이 아니라 이 값으로만 동작해서,
+	// 소재 삭제/사진 교체 시 Cloudinary 원본을 지우려면 따로 보관해둬야 함.
+	private String imagePublicIdFull;
+	private String imagePublicIdCloseup;
+
 	@Enumerated(EnumType.STRING)
 	private MaterialStatus status;
 }

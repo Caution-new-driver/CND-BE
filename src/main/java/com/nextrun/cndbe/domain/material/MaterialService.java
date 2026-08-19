@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.material;
 
 import com.nextrun.cndbe.common.client.CloudinaryImageUploader;
+import com.nextrun.cndbe.common.client.CloudinaryImageUploader.UploadResult;
 import com.nextrun.cndbe.domain.matching.MaterialCandidateRepository;
 import com.nextrun.cndbe.domain.material.dto.MaterialAiTagPreviewRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialCreateRequest;
@@ -30,11 +31,11 @@ public class MaterialService {
     public Material create(MaterialCreateRequest request) {
 
         // 사진이 안 왔을 수도 있으니(선택사항) null/empty 체크부터.
-        String imageUrlFull = (request.getImageFull() != null && !request.getImageFull().isEmpty())
+        UploadResult imageFull = (request.getImageFull() != null && !request.getImageFull().isEmpty())
                 ? imageUploader.upload(request.getImageFull())
                 : null;
 
-        String imageUrlCloseup = (request.getImageCloseup() != null && !request.getImageCloseup().isEmpty())
+        UploadResult imageCloseup = (request.getImageCloseup() != null && !request.getImageCloseup().isEmpty())
                 ? imageUploader.upload(request.getImageCloseup())
                 : null;
 
@@ -48,8 +49,10 @@ public class MaterialService {
                 .handFeel(request.getHandFeel())
                 .flexibility(request.getFlexibility())
                 .quantity(request.getQuantity())
-                .imageUrlFull(imageUrlFull)
-                .imageUrlCloseup(imageUrlCloseup)
+                .imageUrlFull(imageFull != null ? imageFull.url() : null)
+                .imagePublicIdFull(imageFull != null ? imageFull.publicId() : null)
+                .imageUrlCloseup(imageCloseup != null ? imageCloseup.url() : null)
+                .imagePublicIdCloseup(imageCloseup != null ? imageCloseup.publicId() : null)
                 .status(MaterialStatus.AVAILABLE)
                 .build();
 
@@ -90,12 +93,20 @@ public class MaterialService {
         if (request.getAiConfidence() != null) material.setAiConfidence(request.getAiConfidence());
         if (request.getSurfaceNotes() != null) material.setSurfaceNotes(request.getSurfaceNotes());
 
-        // 새 사진이 왔을 때만 기존 사진 URL 교체 (안 왔으면 기존 것 그대로 유지)
+        // 새 사진이 왔을 때만 기존 사진 교체. 새 업로드가 실패하면 기존 사진이 그대로
+        // 남아있어야 하므로, 반드시 "새로 올리기 성공 -> 옛 것 Cloudinary에서 지우기 ->
+        // 필드 교체" 순서를 지킨다.
         if (request.getImageFull() != null && !request.getImageFull().isEmpty()) {
-            material.setImageUrlFull(imageUploader.upload(request.getImageFull()));
+            UploadResult newImageFull = imageUploader.upload(request.getImageFull());
+            imageUploader.delete(material.getImagePublicIdFull());
+            material.setImageUrlFull(newImageFull.url());
+            material.setImagePublicIdFull(newImageFull.publicId());
         }
         if (request.getImageCloseup() != null && !request.getImageCloseup().isEmpty()) {
-            material.setImageUrlCloseup(imageUploader.upload(request.getImageCloseup()));
+            UploadResult newImageCloseup = imageUploader.upload(request.getImageCloseup());
+            imageUploader.delete(material.getImagePublicIdCloseup());
+            material.setImageUrlCloseup(newImageCloseup.url());
+            material.setImagePublicIdCloseup(newImageCloseup.publicId());
         }
 
         // materialRepository.save() 안 불러도 됨 -> JPA 더티 체킹이 알아서 UPDATE 쿼리를 날려줌
@@ -131,9 +142,10 @@ public class MaterialService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageFull은 필수입니다.");
         }
 
-        String imageUrlFull = imageUploader.upload(request.getImageFull());
+        // 저장하지 않는 미리보기용 업로드라 public_id는 쓸 일이 없어 URL만 꺼내 씀.
+        String imageUrlFull = imageUploader.upload(request.getImageFull()).url();
         String imageUrlCloseup = (request.getImageCloseup() != null && !request.getImageCloseup().isEmpty())
-                ? imageUploader.upload(request.getImageCloseup())
+                ? imageUploader.upload(request.getImageCloseup()).url()
                 : null;
 
         return aiTaggingClient.tag(imageUrlFull, imageUrlCloseup);
@@ -171,6 +183,8 @@ public class MaterialService {
         }
 
         materialCandidateRepository.deleteByMaterial_Id(id);
+        imageUploader.delete(material.getImagePublicIdFull());
+        imageUploader.delete(material.getImagePublicIdCloseup());
         materialRepository.delete(material);
     }
 
