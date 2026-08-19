@@ -17,4 +17,7 @@ public interface MaterialCandidateRepository
 
     // b11에서 다른 Drop의 후보 ID를 몰래 보낼 수 없도록 후보 ID와 Drop ID를 함께 확인함.
     Optional<MaterialCandidate> findByIdAndDrop_Id(UUID candidateId, UUID dropId);
+
+    // 소재 삭제 시 그 소재를 참조하는 탈락 후보 이력까지 함께 정리하기 위해 사용함.
+    void deleteByMaterial_Id(UUID materialId);
 }

@@ -1,6 +1,7 @@
 package com.nextrun.cndbe.domain.material;
 
 import com.nextrun.cndbe.common.client.CloudinaryImageUploader;
+import com.nextrun.cndbe.domain.matching.MaterialCandidateRepository;
 import com.nextrun.cndbe.domain.material.dto.MaterialAiTagPreviewRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialCreateRequest;
 import com.nextrun.cndbe.domain.material.dto.MaterialUpdateRequest;
@@ -23,6 +24,7 @@ public class MaterialService {
     private final MaterialRepository materialRepository;
     private final CloudinaryImageUploader imageUploader;
     private final MaterialAiTaggingClient aiTaggingClient;
+    private final MaterialCandidateRepository materialCandidateRepository;
 
     @Transactional
     public Material create(MaterialCreateRequest request) {
@@ -154,9 +156,21 @@ public class MaterialService {
         return (root, query, cb) -> materialType == null ? null : cb.equal(root.get("materialType"), materialType);
     }
 
+    // AVAILABLE 소재만 삭제를 허용함. RESERVED/DEPLETED는 drop_material_selection·
+    // production_material_result가 참조 중인 상태라 FK 위반 없이는 지울 수 없어서 막음.
+    // AVAILABLE이면 이 두 참조는 항상 0건이라(재선택 시 옛 참조가 실제로 지워짐),
+    // 남아있을 수 있는 material_candidate(탈락 후보 이력)만 같이 정리하고 삭제함.
     @Transactional
     public void delete(UUID id) {
         Material material = findMaterialOrThrow(id);
+
+        if (material.getStatus() != MaterialStatus.AVAILABLE) {
+            throw new IllegalStateException(
+                    "AVAILABLE 상태의 소재만 삭제할 수 있습니다. 현재 상태: " + material.getStatus()
+            );
+        }
+
+        materialCandidateRepository.deleteByMaterial_Id(id);
         materialRepository.delete(material);
     }
 

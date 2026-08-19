@@ -90,7 +90,11 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 
 `POST`와 동일한 필드에 더해 AI 태깅 필드(`color`/`pattern`/`texture`/`aiConfidence`/`surfaceNotes`)도 직접 덮어쓸 수 있다(담당자가 AI 결과를 확인 후 수정하는 용도). `multipart/form-data`이며 값을 보낸 필드만 부분 수정되고, 새 사진을 보내면 기존 사진 URL을 교체한다.
 
-**열린 질문**: `DELETE`가 소재 상태(`RESERVED`/`DEPLETED`)를 확인하지 않고 무조건 삭제함 — 이미 어떤 Drop에 예약/확정된 소재를 실수로 지울 수 있는 상태라 팀 미팅에서 제한 여부 논의 필요.
+### `DELETE /api/materials/{id}`
+
+`status`가 `AVAILABLE`이 아니면(`RESERVED`=Drop에 예약 중, `DEPLETED`=Drop 확정으로 소진됨) 409를 반환하고 삭제하지 않는다. `AVAILABLE`이면 그 소재를 참조하던 탈락 후보 이력(`material_candidate`)까지 함께 정리하고 삭제한다(`drop_material_selection`/`production_material_result`는 `AVAILABLE` 상태에서 이미 참조가 0건임이 보장되므로 별도 처리 불필요).
+
+**변경 이력 (2026-08-19, 김재현)**: 위 상태 제한 추가. 기존에는 상태와 무관하게 무조건 삭제를 시도해서, 참조가 남아있는 소재를 지우려 하면 FK 위반으로 예외 처리 안 된 500이 나던 문제를 고침.
 
 ---
 
