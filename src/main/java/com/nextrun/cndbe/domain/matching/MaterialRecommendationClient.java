@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -137,6 +138,12 @@ public class MaterialRecommendationClient {
 
         } catch (IllegalStateException exception) {
             throw exception;
+
+        } catch (HttpClientErrorException.TooManyRequests exception) {
+            throw new IllegalStateException(
+                    "AI 호출 가능 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.",
+                    exception
+            );
 
         } catch (RuntimeException exception) {
             throw new IllegalStateException(

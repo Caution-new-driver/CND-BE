@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -96,7 +97,20 @@ public class GlobalExceptionHandler {
 		));
 	}
 
-	// 위에서 명시적으로 처리하지 않은 예외(DB 제약 위반 등)를 잡는 최후 방어선.
+	// DB 제약(FK·유니크 등) 위반. 아직 발견 안 된 다른 삭제/수정 경로에서도 공통으로 걸릴 수 있는
+	// 안전망이라, 어떤 제약인지는 알 수 없으므로 일부러 원인을 특정하지 않고 안내한다.
+	// 실제 원인은 로그로 남겨 나중에 원인이 된 경로를 찾을 수 있게 한다.
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(
+			DataIntegrityViolationException e) {
+		log.warn("DB 제약 위반이 발생했습니다.", e);
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+				"message",
+				"이미 사용 중인 데이터와 충돌하여 처리할 수 없습니다."
+		));
+	}
+
+	// 위에서 명시적으로 처리하지 않은 예외(그 밖의 예상치 못한 오류)를 잡는 최후 방어선.
 	// 안 잡으면 Spring 기본 에러 응답이 나가는데, message 필드가 영어 예외 메시지이거나
 	// 아예 없어서 프론트가 "API error 500: ..." 같은 영어 문구를 그대로 보여주게 된다.
 	// 내부 예외 내용은 로그로만 남기고, 사용자에게는 한국어 안내만 보낸다.
