@@ -99,8 +99,12 @@ class AccessorySelectionServiceTest {
                 List.of(ring, zipper)
         );
 
+        // flush가 delete와 saveAll 사이에서 반드시 호출돼야 한다 — 그렇지 않으면 Hibernate가
+        // insert를 delete보다 먼저 flush해서, 안 바뀐 부자재의 (drop_id, accessory_id) 유니크
+        // 제약을 옛 행이 아직 남아있는 상태에서 위반하게 된다.
         InOrder order = inOrder(selectionRepository);
         order.verify(selectionRepository).deleteAllByDrop_Id(dropId);
+        order.verify(selectionRepository).flush();
         order.verify(selectionRepository).saveAll(anyList());
     }
 

@@ -76,7 +76,14 @@ public class AccessorySelectionService {
                         .build())
                 .toList();
 
+        // deleteAllByDrop_Id만 호출하고 바로 saveAll을 하면, Hibernate가 같은 트랜잭션
+        // 안의 변경을 기본적으로 INSERT -> DELETE 순서로 flush하기 때문에 문제가 생긴다.
+        // 부자재 세트를 부분적으로만 바꾸면(예: 지퍼만 바꾸고 링은 그대로) 안 바뀐 쪽(링)의
+        // 새 행을 INSERT하려는 시점에 옛 행이 아직 물리적으로 삭제되지 않은 상태라
+        // (drop_id, accessory_id) 유니크 제약(uk_drop_accessory_selection)에 걸려 실패한다.
+        // delete를 먼저 flush로 확정해서 insert보다 반드시 앞서 실행되게 한다.
         selectionRepository.deleteAllByDrop_Id(dropId);
+        selectionRepository.flush();
         List<DropAccessorySelection> savedSelections =
                 selectionRepository.saveAll(newSelections);
 
