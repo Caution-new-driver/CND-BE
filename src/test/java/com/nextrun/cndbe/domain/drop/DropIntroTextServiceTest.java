@@ -88,7 +88,7 @@ class DropIntroTextServiceTest {
     }
 
     @Test
-    void AI_호출이_실패하면_예외가_그대로_전달된다() {
+    void AI_호출이_실패하면_남은_횟수를_담은_예외로_변환된다() {
         DropIntroTextPromptData promptData = new DropIntroTextPromptData(
                 "이름", "미니백", ScenarioType.MAIN_ONLY, null, null, List.of()
         );
@@ -97,7 +97,14 @@ class DropIntroTextServiceTest {
         when(introTextClient.generate(promptData))
                 .thenThrow(new IllegalStateException("AI 소개문 생성에 실패했습니다."));
 
-        assertThrows(IllegalStateException.class, () -> service.regenerate(dropId));
+        IntroTextGenerationFailedException exception = assertThrows(
+                IntroTextGenerationFailedException.class,
+                () -> service.regenerate(dropId)
+        );
+        assertEquals(
+                DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT - 2,
+                exception.getRegenerationsRemaining()
+        );
     }
 
     @Test

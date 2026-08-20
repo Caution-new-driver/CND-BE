@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -67,16 +69,44 @@ public class MaterialAiTaggingClient {
                 )
         );
 
-        // 3. 진짜 요청 보내기
-        ChatCompletionResponse response = openAiRestClient.post()
-                .uri("/chat/completions")
-                .body(requestBody)
-                .retrieve()
-                .body(ChatCompletionResponse.class);
+        try {
+            // 3. 진짜 요청 보내기
+            ChatCompletionResponse response = openAiRestClient.post()
+                    .uri("/chat/completions")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(ChatCompletionResponse.class);
 
-        // 4. 응답 안의 JSON 문자열을, 우리가 쓸 수 있는 객체(MaterialAiTagResult)로 변환
-        String content = response.choices().get(0).message().content();
-        return jsonMapper.readValue(content, MaterialAiTagResult.class);
+            // 4. 응답 안의 JSON 문자열을, 우리가 쓸 수 있는 객체(MaterialAiTagResult)로 변환
+            String content = extractContent(response);
+            return jsonMapper.readValue(content, MaterialAiTagResult.class);
+
+        } catch (IllegalStateException exception) {
+            throw exception;
+
+        } catch (HttpClientErrorException.TooManyRequests exception) {
+            throw new IllegalStateException(
+                    "AI 호출 가능 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.",
+                    exception
+            );
+
+        } catch (RuntimeException exception) {
+            throw new IllegalStateException(
+                    "AI 소재 분석에 실패했습니다.",
+                    exception
+            );
+        }
+    }
+
+    private String extractContent(ChatCompletionResponse response) {
+        if (response == null
+                || response.choices() == null
+                || response.choices().isEmpty()
+                || response.choices().get(0).message() == null
+                || !StringUtils.hasText(response.choices().get(0).message().content())) {
+            throw new IllegalStateException("OpenAI가 소재 분석 결과를 반환하지 않았습니다.");
+        }
+        return response.choices().get(0).message().content();
     }
 
     // OpenAI가 돌려주는 응답 전체의 모양(껍데기). 우리한테 필요한 부분만 최소한으로 담음.

@@ -24,15 +24,22 @@ public class DropIntroTextService {
     public DropIntroTextResponse regenerate(UUID dropId) {
         DropConfirmationWriter.IntroTextRegenerationReservation reservation =
                 confirmationWriter.reserveRegenerationAttempt(dropId);
+        int remaining = DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT
+                - reservation.usedCount();
 
         // 실패하면 여기서 예외가 그대로 던져진다 — confirm()과 달리, 재생성은
         // 사용자가 명시적으로 새 결과를 기다리는 액션이라 실패를 조용히 삼키지 않는다.
         // 이미 위에서 시도 횟수는 차감됐으므로 실패한 시도도 정상적으로 6회에 포함된다.
-        String introText = introTextClient.generate(reservation.promptData());
+        // 프론트가 보여주는 "남은 횟수"가 그 차감을 놓치지 않도록, 실패 응답에도 최신
+        // remaining을 실어 보낸다(IntroTextGenerationFailedException).
+        String introText;
+        try {
+            introText = introTextClient.generate(reservation.promptData());
+        } catch (RuntimeException exception) {
+            throw new IntroTextGenerationFailedException(exception.getMessage(), remaining);
+        }
         confirmationWriter.saveIntroText(dropId, introText);
 
-        int remaining = DropConfirmationWriter.MAX_INTRO_TEXT_GENERATION_COUNT
-                - reservation.usedCount();
         return new DropIntroTextResponse(dropId, introText, remaining);
     }
 

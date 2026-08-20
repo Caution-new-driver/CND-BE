@@ -6,7 +6,6 @@ import com.nextrun.cndbe.domain.drop.dto.DropConfirmResponse;
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextRequest;
 import com.nextrun.cndbe.domain.drop.dto.DropIntroTextResponse;
 import com.nextrun.cndbe.domain.drop.dto.DropResponse;
-import com.nextrun.cndbe.domain.material.AccessoryColor;
 import com.nextrun.cndbe.domain.material.MaterialColor;
 import com.nextrun.cndbe.domain.material.MaterialGrade;
 import com.nextrun.cndbe.domain.material.MaterialPattern;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +36,7 @@ public class DropController {
     private final DropService dropService;
     private final DropConfirmationService dropConfirmationService;
     private final DropIntroTextService dropIntroTextService;
+    private final DropDeletionService dropDeletionService;
 
     // b7: 새 RUN Drop 기획 시작 - draft 상태 Drop 생성, 고정 미니백 템플릿 정보 함께 반환
     @Operation(
@@ -63,10 +64,22 @@ public class DropController {
                 .toList();
     }
 
+    // 진입 경로(새로 확정 vs 탭 이동·재진입)와 무관하게 "이 Drop이 지금 CONFIRMED인지"를
+    // 프론트가 항상 조회할 수 있도록 하는 단건 조회. 없으면 404.
+    @Operation(
+            summary = "Drop 단건 조회",
+            description = "Drop의 현재 상태(DRAFT/CONFIRMED)를 포함한 정보를 조회합니다."
+    )
+    @GetMapping("/api/drops/{dropId}")
+    public DropResponse get(
+            @Parameter(description = "조회할 Drop ID") @PathVariable UUID dropId) {
+        return DropResponse.from(dropService.get(dropId));
+    }
+
     // b8: 디자인 조건 저장 (스케치 이미지 첨부 포함, 선택사항)
     @Operation(
             summary = "디자인 조건 저장",
-            description = "소재 타입·색상·패턴·최소 등급·부자재 색상·포인트 소재 사용 여부를 저장합니다. "
+            description = "소재 타입·색상·패턴·최소 등급을 저장합니다. "
                     + "같은 Drop으로 재호출하면 새로 생기지 않고 기존 조건을 덮어씁니다(upsert)."
     )
     @PostMapping(value = "/api/drops/{dropId}/design-requirement")
@@ -75,12 +88,36 @@ public class DropController {
             @RequestParam(required = false) MaterialType materialType,
             @RequestParam(required = false) MaterialColor color,
             @RequestParam(required = false) MaterialPattern pattern,
-            @RequestParam(required = false) MaterialGrade minGrade,
-            @RequestParam(required = false) AccessoryColor accessoryColor,
-            @RequestParam(required = false) Boolean usePointMaterial) {
+            @RequestParam(required = false) MaterialGrade minGrade) {
         DesignRequirement requirement = dropService.saveDesignRequirement(
-                dropId, materialType, color, pattern, minGrade, accessoryColor, usePointMaterial);
+                dropId, materialType, color, pattern, minGrade);
         return DesignRequirementResponse.from(requirement);
+    }
+
+    // "이어서 제작" 재진입 시 f3 폼을 이전에 저장한 값으로 채우기 위한 조회.
+    @Operation(
+            summary = "디자인 조건 조회",
+            description = "이 Drop에 저장된 디자인 조건을 조회합니다. 아직 저장한 적이 없으면 404를 반환합니다."
+    )
+    @GetMapping("/api/drops/{dropId}/design-requirement")
+    public DesignRequirementResponse getDesignRequirement(
+            @Parameter(description = "디자인 조건을 조회할 Drop ID") @PathVariable UUID dropId) {
+        return DesignRequirementResponse.from(dropService.getDesignRequirement(dropId));
+    }
+
+    // DRAFT Drop과 그동안 저장된 하위 데이터(디자인 조건·추천 후보·소재/부자재 선택·제작안)를
+    // 통째로 삭제. 예약해둔 소재는 다시 AVAILABLE로 돌아감.
+    @Operation(
+            summary = "Drop 삭제",
+            description = "아직 확정하지 않은(DRAFT) Drop과 그 하위 데이터를 모두 삭제합니다. "
+                    + "예약해둔 소재는 다시 AVAILABLE로 돌아갑니다. "
+                    + "이미 확정된(CONFIRMED) Drop은 삭제할 수 없습니다(409)."
+    )
+    @DeleteMapping("/api/drops/{dropId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @Parameter(description = "삭제할 Drop ID") @PathVariable UUID dropId) {
+        dropDeletionService.delete(dropId);
     }
 
     // b13: 선택된 제작안(b12)과 소재 조합(b11)을 확정하고 Drop 상태를 CONFIRMED로 전환

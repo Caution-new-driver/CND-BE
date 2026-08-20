@@ -38,7 +38,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 
 비밀번호가 틀리면 401 `{"message": "비밀번호가 올바르지 않습니다."}`.
 
-토큰은 만료시각 14일 + HMAC 서명으로 구성되며 서버는 세션을 DB에 저장하지 않고
+토큰은 만료시각 1일 + HMAC 서명으로 구성되며 서버는 세션을 DB에 저장하지 않고
 매 요청마다 서명만 재검증한다(별도 Session 테이블 없음, ERD 변경 없음). 프론트는
 로그인 응답의 토큰을 저장해뒀다가 이후 모든 API 요청에 `Authorization: Bearer <token>`
 헤더로 실어 보내야 한다. 쿠키를 쓰지 않은 이유: 프론트(Vercel)와 백엔드(Railway)가
@@ -47,6 +47,8 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 
 배포 시 필요한 환경변수: `ACCESS_PASSWORD`(로그인 비밀번호), `SESSION_SECRET`(토큰
 서명용 랜덤 키, `openssl rand -hex 32`로 생성).
+
+**변경 이력 (2026-08-20, 김재현)**: 토큰 만료 기간을 3일 → 1일로 단축(`AuthTokenService.TOKEN_VALID_DAYS`). 이 문서에 예전부터 "14일"로 적혀있던 건 실제 코드(3일)와 어긋난 오기였음 — 이번에 바로잡음.
 
 ---
 
@@ -90,7 +92,11 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 
 `POST`와 동일한 필드에 더해 AI 태깅 필드(`color`/`pattern`/`texture`/`aiConfidence`/`surfaceNotes`)도 직접 덮어쓸 수 있다(담당자가 AI 결과를 확인 후 수정하는 용도). `multipart/form-data`이며 값을 보낸 필드만 부분 수정되고, 새 사진을 보내면 기존 사진 URL을 교체한다.
 
-**열린 질문**: `DELETE`가 소재 상태(`RESERVED`/`DEPLETED`)를 확인하지 않고 무조건 삭제함 — 이미 어떤 Drop에 예약/확정된 소재를 실수로 지울 수 있는 상태라 팀 미팅에서 제한 여부 논의 필요.
+### `DELETE /api/materials/{id}`
+
+`status`가 `AVAILABLE`이 아니면(`RESERVED`=Drop에 예약 중, `DEPLETED`=Drop 확정으로 소진됨) 409를 반환하고 삭제하지 않는다. `AVAILABLE`이면 그 소재를 참조하던 탈락 후보 이력(`material_candidate`)까지 함께 정리하고 삭제한다(`drop_material_selection`/`production_material_result`는 `AVAILABLE` 상태에서 이미 참조가 0건임이 보장되므로 별도 처리 불필요).
+
+**변경 이력 (2026-08-19, 김재현)**: 위 상태 제한 추가. 기존에는 상태와 무관하게 무조건 삭제를 시도해서, 참조가 남아있는 소재를 지우려 하면 FK 위반으로 예외 처리 안 된 500이 나던 문제를 고침.
 
 ---
 
@@ -131,8 +137,6 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 | color | enum(string) | 아니오 | `BLACK`, `BROWN`, `BEIGE`, `WHITE`, `RED`, `BLUE`, `MULTI`, `OTHER` |
 | pattern | enum(string) | 아니오 | `MONOGRAM`, `SOLID`, `GEOMETRIC`, `STRIPE`, `OTHER` |
 | minGrade | enum(string) | 아니오 | `A`, `B`, `C` |
-| accessoryColor | enum(string) | 아니오 | `GOLD`, `SILVER`, `BLACK` |
-| usePointMaterial | boolean | 아니오 | - |
 
 `materialType`/`color`/`pattern`/`minGrade`는 `Material` 엔티티의 enum(`MaterialType`/`MaterialColor`/`MaterialPattern`/`MaterialGrade`)과 동일한 값을 그대로 씀 — b9에서 문자열 비교 없이 바로 매칭하기 위함. FE(f3)는 자유 입력 대신 Select로 받아 한글 라벨(예: "가죽")을 이 영문 enum 값(`LEATHER`)으로 변환해 전송해야 함. 잘못된 값이 오면 400으로 거부됨.
 
@@ -145,9 +149,7 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
   "materialType": "LEATHER",
   "color": "BLACK",
   "pattern": "SOLID",
-  "minGrade": "A",
-  "accessoryColor": "GOLD",
-  "usePointMaterial": true
+  "minGrade": "A"
 }
 ```
 
@@ -156,6 +158,10 @@ MCM Run 담당 기획자 전용 도구라 회원가입/역할별 계정 대신, 
 **열린 질문**: 필수 필드가 실제로 뭔지 (지금은 전부 선택). f4 분기 B "조건 수정해 다시 검색" 시 전체 재입력인지 특정 필드만 수정인지도 기획서 자체에 미결정으로 남아있음 — 이 upsert 방식이면 어느 쪽이든 대응은 됨.
 
 **변경 이력 (2026-08-07, 김재현)**: `materialType`/`color`/`pattern`/`minGrade`/`accessoryColor`를 자유 입력 문자열에서 고정 enum으로 변경. b9가 `Material` enum과 직접 비교해야 해서 오타·표기 흔들림을 막기 위함. `accessoryColor`와 `Accessory.color`는 모두 `AccessoryColor`(`GOLD`/`SILVER`/`BLACK`)를 사용한다.
+
+**변경 이력 (2026-08-18, 김재현)**: `usePointMaterial` 필드 제거. 저장·응답만 될 뿐 b9~b12 어느 로직에서도 참조되지 않는 죽은 입력값이었음 — 실제 포인트 소재 사용 여부는 b11 소재 확정 단계에서 `pointCandidateId` 제출 여부로 결정됨.
+
+**변경 이력 (2026-08-18, 김재현)**: `accessoryColor` 필드 제거 및 부자재 색상 검증 완화. 기존에는 이 필드로 선호 색상을 미리 선언하고 `/accessory-selections` 호출 시 그 값과 일치하는지, 지퍼·링이 서로 같은 색상인지 교차검증했으나 두 검증 모두 제거함. 이제 부자재 색상은 사전 선언 없이 `/accessory-selections` 호출 시점에 바로 정해지고, 지퍼와 링을 서로 다른 색상으로 선택해도 된다.
 
 **변경 이력 (2026-08-01, 김재현)**: 스케치 이미지 첨부 기능(`sketchImage`/`sketchImageUrl`) 제거. 저장은 됐지만 이후 어떤 화면(f4~f7)에서도 다시 노출하는 계획이 없어 "업로드만 되고 아무도 다시 안 보는" 죽은 기능이었음. v4 문서에 있었던 고객용 Drop 상세 페이지(`f9`, v5에서 삭제)에서 노출하려던 용도였을 것으로 추정 — 고객 접점 자체가 사라지며 목적을 잃은 것으로 판단해 정리함.
 
@@ -235,8 +241,9 @@ Drop을 생성하지 않고도 고정 템플릿(패턴 조각/부자재) 정보�
 `GET /api/accessories`에서 받은 ID를 사용한다. 미니백 템플릿의 필수 종류인
 지퍼와 링이 각각 하나씩 포함돼야 하며, 같은 Drop에서 재호출하면 기존 부자재
 선택을 새 세트로 교체한다. 링의 필요 수량 2개는 템플릿 정보로 관리하므로 같은
-부자재 ID를 두 번 보내지 않는다. 한 세트의 지퍼와 링은 같은 색상이어야 하고,
-디자인 조건의 `accessoryColor`가 지정됐다면 해당 색상과 일치해야 한다.
+부자재 ID를 두 번 보내지 않는다. 지퍼와 링은 서로 다른 색상으로 선택해도 되며,
+디자인 조건 단계에서 미리 지정해야 하는 색상 제약은 없다 — 이 API를 호출하는 시점에
+바로 색상까지 확정된다.
 
 응답 (200): Drop ID와 저장된 부자재 선택 ID·부자재 ID·종류·색상을 반환한다.
 

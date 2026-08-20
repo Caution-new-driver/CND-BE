@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class AuthTokenService {
 
 	private static final String HMAC_ALGORITHM = "HmacSHA256";
-	private static final long TOKEN_VALID_DAYS = 3;
+	private static final long TOKEN_VALID_DAYS = 1;
 
 	private final String accessPassword;
 	private final SecretKeySpec signingKey;

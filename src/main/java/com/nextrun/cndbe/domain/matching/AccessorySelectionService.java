@@ -3,8 +3,6 @@ package com.nextrun.cndbe.domain.matching;
 import com.nextrun.cndbe.domain.drop.Drop;
 import com.nextrun.cndbe.domain.drop.DropRepository;
 import com.nextrun.cndbe.domain.drop.DropStatus;
-import com.nextrun.cndbe.domain.drop.DesignRequirement;
-import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionRequest;
 import com.nextrun.cndbe.domain.matching.dto.AccessorySelectionResponse;
 import com.nextrun.cndbe.domain.material.Accessory;
@@ -27,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccessorySelectionService {
 
     private final DropRepository dropRepository;
-    private final DesignRequirementRepository designRequirementRepository;
     private final AccessoryRepository accessoryRepository;
     private final DropAccessorySelectionRepository selectionRepository;
     private final TemplateAccessoryValidator templateAccessoryValidator;
@@ -48,17 +45,10 @@ public class AccessorySelectionService {
             );
         }
 
-        DesignRequirement requirement = designRequirementRepository
-                .findByDrop_Id(dropId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "디자인 조건을 찾을 수 없습니다: " + dropId
-                ));
-
         // 미니백 템플릿이 요구하는 지퍼·링 등이 빠지거나 중복되지 않았는지 확인함.
         templateAccessoryValidator.validate(
                 drop.getTemplate(),
-                accessories,
-                requirement.getAccessoryColor()
+                accessories
         );
 
         // findAllById의 반환 순서는 보장되지 않으므로 요청 순서대로 다시 정렬함.
@@ -68,6 +58,16 @@ public class AccessorySelectionService {
                         Function.identity()
                 ));
 
+        // f4 "이전 단계로"↔"다음" 왕복처럼 같은 세트를 다시 제출하는 경우까지 매번
+        // 지우고 새로 저장하면 selectionId만 계속 바뀌는 불필요한 쓰기라 건너뛴다.
+        List<DropAccessorySelection> existingSelections = selectionRepository.findAllByDrop_Id(dropId);
+        Set<UUID> existingAccessoryIds = existingSelections.stream()
+                .map(selection -> selection.getAccessory().getId())
+                .collect(Collectors.toSet());
+        if (existingAccessoryIds.equals(Set.copyOf(requestedIds))) {
+            return AccessorySelectionResponse.from(dropId, existingSelections);
+        }
+
         List<DropAccessorySelection> newSelections = requestedIds.stream()
                 .map(accessoryById::get)
                 .map(accessory -> DropAccessorySelection.builder()
@@ -76,7 +76,14 @@ public class AccessorySelectionService {
                         .build())
                 .toList();
 
+        // deleteAllByDrop_Id만 호출하고 바로 saveAll을 하면, Hibernate가 같은 트랜잭션
+        // 안의 변경을 기본적으로 INSERT -> DELETE 순서로 flush하기 때문에 문제가 생긴다.
+        // 부자재 세트를 부분적으로만 바꾸면(예: 지퍼만 바꾸고 링은 그대로) 안 바뀐 쪽(링)의
+        // 새 행을 INSERT하려는 시점에 옛 행이 아직 물리적으로 삭제되지 않은 상태라
+        // (drop_id, accessory_id) 유니크 제약(uk_drop_accessory_selection)에 걸려 실패한다.
+        // delete를 먼저 flush로 확정해서 insert보다 반드시 앞서 실행되게 한다.
         selectionRepository.deleteAllByDrop_Id(dropId);
+        selectionRepository.flush();
         List<DropAccessorySelection> savedSelections =
                 selectionRepository.saveAll(newSelections);
 
@@ -84,6 +91,14 @@ public class AccessorySelectionService {
                 dropId,
                 savedSelections
         );
+    }
+
+    // "이어서 제작" 재진입 시 f4에서 이전에 선택한 부자재 세트를 복원하기 위한 조회.
+    // 부자재는 선택사항이라 하나도 안 골랐어도 에러가 아니라 빈 목록으로 응답함.
+    @Transactional(readOnly = true)
+    public AccessorySelectionResponse getSelections(UUID dropId) {
+        List<DropAccessorySelection> selections = selectionRepository.findAllByDrop_Id(dropId);
+        return AccessorySelectionResponse.from(dropId, selections);
     }
 
     private Drop findEditableDrop(UUID dropId) {
