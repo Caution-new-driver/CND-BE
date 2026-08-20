@@ -17,6 +17,7 @@ import com.nextrun.cndbe.common.calculation.TemplatePatternParser;
 import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.Drop;
 import com.nextrun.cndbe.domain.drop.DropRepository;
+import com.nextrun.cndbe.domain.drop.DropStatus;
 import com.nextrun.cndbe.domain.matching.dto.MaterialCandidateListResponse;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.MaterialColor;
@@ -87,6 +88,7 @@ class MaterialCandidateServiceTest {
         drop = Drop.builder()
                 .id(dropId)
                 .template(Template.builder().name("미니백").build())
+                .status(DropStatus.DRAFT)
                 .build();
         requirement = DesignRequirement.builder()
                 .drop(drop)
@@ -228,6 +230,23 @@ class MaterialCandidateServiceTest {
                 NoSuchElementException.class,
                 () -> service.calculateCandidates(dropId)
         );
+    }
+
+    @Test
+    void 확정된_Drop은_AI_호출_전에_재계산이_거부된다() {
+        drop.setStatus(DropStatus.CONFIRMED);
+        when(dropRepository.findByIdWithTemplate(dropId))
+                .thenReturn(Optional.of(drop));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.calculateCandidates(dropId)
+        );
+
+        verify(materialRecommendationClient, never())
+                .recommend(any(DesignRequirement.class), anyList());
+        verify(materialCandidateWriter, never())
+                .replaceAfterResearch(org.mockito.ArgumentMatchers.eq(dropId), anyList());
     }
 
     @Test

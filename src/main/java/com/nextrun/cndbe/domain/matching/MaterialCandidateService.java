@@ -6,6 +6,7 @@ import com.nextrun.cndbe.domain.drop.DesignRequirement;
 import com.nextrun.cndbe.domain.drop.DesignRequirementRepository;
 import com.nextrun.cndbe.domain.drop.Drop;
 import com.nextrun.cndbe.domain.drop.DropRepository;
+import com.nextrun.cndbe.domain.drop.DropStatus;
 import com.nextrun.cndbe.domain.matching.dto.MaterialCandidateListResponse;
 import com.nextrun.cndbe.domain.material.Material;
 import com.nextrun.cndbe.domain.material.repository.MaterialRepository;
@@ -134,12 +135,23 @@ public class MaterialCandidateService {
     }
 
     private Drop findDropWithTemplate(UUID dropId) {
-        return dropRepository.findByIdWithTemplate(dropId)
+        Drop drop = dropRepository.findByIdWithTemplate(dropId)
                 .orElseThrow(() ->
                         new NoSuchElementException(
                                 "Drop을 찾을 수 없습니다: " + dropId
                         )
                 );
+
+        // 실제 OpenAI 호출(materialRecommendationClient.recommend) 전에 막아서, 확정된
+        // Drop에 대해 재계산을 시도해도 AI 비용이 나가지 않도록 한다. 이 체크가 없으면
+        // AI 호출까지 다 끝난 뒤에야 뒷단(releaseSelectionForResearch)에서 실패했다.
+        if (drop.getStatus() != DropStatus.DRAFT) {
+            throw new IllegalStateException(
+                    "확정된 Drop의 소재 후보는 다시 계산할 수 없습니다."
+            );
+        }
+
+        return drop;
     }
 
     private DesignRequirement findDesignRequirement(UUID dropId) {
