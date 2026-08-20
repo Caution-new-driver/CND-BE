@@ -1,0 +1,12 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: cndbe
+  profiles:
+    active: local
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 20MB
