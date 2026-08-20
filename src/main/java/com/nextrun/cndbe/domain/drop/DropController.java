@@ -64,6 +64,18 @@ public class DropController {
                 .toList();
     }
 
+    // 진입 경로(새로 확정 vs 탭 이동·재진입)와 무관하게 "이 Drop이 지금 CONFIRMED인지"를
+    // 프론트가 항상 조회할 수 있도록 하는 단건 조회. 없으면 404.
+    @Operation(
+            summary = "Drop 단건 조회",
+            description = "Drop의 현재 상태(DRAFT/CONFIRMED)를 포함한 정보를 조회합니다."
+    )
+    @GetMapping("/api/drops/{dropId}")
+    public DropResponse get(
+            @Parameter(description = "조회할 Drop ID") @PathVariable UUID dropId) {
+        return DropResponse.from(dropService.get(dropId));
+    }
+
     // b8: 디자인 조건 저장 (스케치 이미지 첨부 포함, 선택사항)
     @Operation(
             summary = "디자인 조건 저장",
