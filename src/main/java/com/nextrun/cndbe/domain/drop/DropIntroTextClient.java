@@ -18,13 +18,25 @@ public class DropIntroTextClient {
 
     private static final String MODEL = "gpt-5.6-terra";
     private static final int MAX_LENGTH = 300;
+    // 이 호출 한 번 자체가 재생성 시도 횟수를 소모한다(reserveRegenerationAttempt 참고).
+    // 일시적인 타임아웃/빈 응답으로 사용자가 시도 횟수만 날리는 걸 줄이기 위해 실패 시 한 번만
+    // 더 시도한다 — 그 이상 재시도하면 오히려 유효한 실패(잘못된 요청 등)까지 늦게 확정된다.
+    private static final int MAX_ATTEMPTS = 2;
 
     private final RestClient openAiRestClient;
     private final JsonMapper jsonMapper;
 
     public String generate(DropIntroTextPromptData promptData) {
         String prompt = jsonMapper.writeValueAsString(promptData);
-        return requestIntroText(prompt);
+        RuntimeException lastFailure = null;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                return requestIntroText(prompt);
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
+            }
+        }
+        throw lastFailure;
     }
 
     private String requestIntroText(String prompt) {
