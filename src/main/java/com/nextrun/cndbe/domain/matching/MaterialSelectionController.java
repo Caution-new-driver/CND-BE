@@ -43,7 +43,8 @@ public class MaterialSelectionController {
     // "이어서 제작" 재진입 시 f4에서 이전에 확정한 조합을 복원하기 위한 조회.
     @Operation(
             summary = "주 소재·포인트 소재 선택 조회",
-            description = "이 Drop에 저장된 소재 선택을 조회합니다. 아직 선택한 적이 없으면 404를 반환합니다."
+            description = "이 Drop에 저장된 소재 선택을 조회합니다. "
+                    + "아직 선택한 적이 없으면 mainMaterial이 null인 빈 응답을 반환합니다(404 아님)."
     )
     @GetMapping
     public MaterialSelectionResponse getSelection(

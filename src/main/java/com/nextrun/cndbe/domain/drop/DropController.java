@@ -97,12 +97,16 @@ public class DropController {
     // "이어서 제작" 재진입 시 f3 폼을 이전에 저장한 값으로 채우기 위한 조회.
     @Operation(
             summary = "디자인 조건 조회",
-            description = "이 Drop에 저장된 디자인 조건을 조회합니다. 아직 저장한 적이 없으면 404를 반환합니다."
+            description = "이 Drop에 저장된 디자인 조건을 조회합니다. "
+                    + "아직 저장한 적이 없으면 id가 null인 빈 응답을 반환합니다(404 아님)."
     )
     @GetMapping("/api/drops/{dropId}/design-requirement")
     public DesignRequirementResponse getDesignRequirement(
             @Parameter(description = "디자인 조건을 조회할 Drop ID") @PathVariable UUID dropId) {
-        return DesignRequirementResponse.from(dropService.getDesignRequirement(dropId));
+        DesignRequirement requirement = dropService.getDesignRequirement(dropId);
+        return requirement == null
+                ? DesignRequirementResponse.empty(dropId)
+                : DesignRequirementResponse.from(requirement);
     }
 
     // DRAFT Drop과 그동안 저장된 하위 데이터(디자인 조건·추천 후보·소재/부자재 선택·제작안)를

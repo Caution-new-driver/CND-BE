@@ -30,4 +30,9 @@ public class DesignRequirementResponse {
 				.minGrade(requirement.getMinGrade())
 				.build();
 	}
+
+	// 아직 저장한 적 없는 Drop 조회용 — id가 null이면 "저장된 적 없음"을 뜻한다.
+	public static DesignRequirementResponse empty(UUID dropId) {
+		return DesignRequirementResponse.builder().dropId(dropId).build();
+	}
 }

@@ -51,11 +51,14 @@ public class DropService {
                 .orElseThrow(() -> new NoSuchElementException("존재하지 않는 Drop입니다: " + dropId));
     }
 
-	// "이어서 제작" 재진입 시 f3 폼을 채우기 위한 조회. 아직 저장한 적 없으면 404.
+	// "이어서 제작" 재진입 시 f3 폼을 채우기 위한 조회. Drop 자체가 없으면 404, 있는데
+	// 아직 저장한 적 없으면 null(컨트롤러가 빈 DesignRequirementResponse로 변환).
 	public DesignRequirement getDesignRequirement(java.util.UUID dropId) {
+		if (!dropRepository.existsById(dropId)) {
+			throw new NoSuchElementException("존재하지 않는 Drop입니다: " + dropId);
+		}
 		return designRequirementRepository.findByDrop_Id(dropId)
-				.orElseThrow(() -> new NoSuchElementException(
-						"디자인 조건을 찾을 수 없습니다: " + dropId));
+				.orElse(null);
 	}
 
 	@Transactional

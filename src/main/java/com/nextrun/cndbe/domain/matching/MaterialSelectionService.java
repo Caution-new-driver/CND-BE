@@ -118,15 +118,17 @@ public class MaterialSelectionService {
         );
     }
 
-    // "이어서 제작" 재진입 시 f4에서 이전에 확정한 조합을 복원하기 위한 조회.
+    // "이어서 제작" 재진입 시 f4에서 이전에 확정한 조합을 복원하기 위한 조회. Drop 자체가
+    // 없으면 404, 있는데 아직 선택한 적 없으면 mainMaterial이 null인 빈 응답을 반환한다.
     @Transactional(readOnly = true)
     public MaterialSelectionResponse getSelection(UUID dropId) {
-        DropMaterialSelection selection = selectionRepository
+        if (!dropRepository.existsById(dropId)) {
+            throw new NoSuchElementException("존재하지 않는 Drop입니다: " + dropId);
+        }
+        return selectionRepository
                 .findByDrop_Id(dropId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "소재 선택 정보를 찾을 수 없습니다: " + dropId
-                ));
-        return MaterialSelectionResponse.from(selection);
+                .map(MaterialSelectionResponse::from)
+                .orElseGet(() -> MaterialSelectionResponse.empty(dropId));
     }
 
     // f4에서 조건을 수정해 후보를 다시 계산하면 이전 확정본을 지우고
