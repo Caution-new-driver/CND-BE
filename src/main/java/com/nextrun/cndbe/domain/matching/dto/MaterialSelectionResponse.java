@@ -24,4 +24,9 @@ public record MaterialSelectionResponse(
                         : MaterialResponse.from(selection.getPointMaterial())
         );
     }
+
+    // 아직 선택한 적 없는 Drop 조회용 — mainMaterial이 null이면 "선택된 적 없음"을 뜻한다.
+    public static MaterialSelectionResponse empty(UUID dropId) {
+        return new MaterialSelectionResponse(null, dropId, null, null);
+    }
 }

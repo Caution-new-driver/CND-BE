@@ -76,19 +76,14 @@ public class ProductionScenarioService {
         return buildResponse(drop);
     }
 
+    // 아직 계산한 적 없으면 scenarios가 빈 배열인 응답을 반환한다(409 아님) —
+    // buildResponse가 어차피 빈 결과를 그대로 담아 반환하므로 별도 분기가 필요 없다.
     @Transactional(readOnly = true)
     public ProductionScenarioListResponse get(UUID dropId) {
         Drop drop = dropRepository.findById(dropId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Drop을 찾을 수 없습니다: " + dropId
                 ));
-        if (scenarioRepository
-                .findAllByDrop_IdOrderByScenarioTypeAsc(dropId)
-                .isEmpty()) {
-            throw new IllegalStateException(
-                    "아직 계산된 제작 시나리오가 없습니다."
-            );
-        }
         return buildResponse(drop);
     }
 
